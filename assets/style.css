@@ -1,0 +1,38 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f0f0f0;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+#week-selector {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#matches-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.match {
+    background-color: #fff;
+    padding: 10px;
+    margin: 5px;
+    border: 1px solid #ccc;
+    width: 80%;
+    max-width: 600px;
+}
+
+.match h3 {
+    margin: 0;
+}
+
+.match p {
+    margin: 5px 0;
+}

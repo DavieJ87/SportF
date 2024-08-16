@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bundesliga Schedule</title>
+    <link rel="stylesheet" href="assets/style.css">
+    <script defer src="assets/app.js"></script>
+    <!-- Include Firebase SDK -->
+    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+</head>
+<body>
+    <h1>Bundesliga 2023/2024 Schedule</h1>
+    <div id="week-selector">
+        <label for="week">Select Week: </label>
+        <select id="week"></select>
+    </div>
+    <div id="matches-container">
+        <!-- Match data will be displayed here -->
+    </div>
+</body>
+</html>
