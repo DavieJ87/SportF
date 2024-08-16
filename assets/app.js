@@ -1,31 +1,35 @@
-// Import the functions you need from the SDKs you need
+// Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
-// TODO: Add your Firebase configuration here
+
+// Firebase configuration
+
 const firebaseConfig = {
 
   apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
-
   authDomain: "sportf-8c772.firebaseapp.com",
-
   databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
-
   projectId: "sportf-8c772",
-
   storageBucket: "sportf-8c772.appspot.com",
-
   messagingSenderId: "523775447476",
-
   appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
 
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 const database = getDatabase(app);
 
+// Get references to DOM elements
 const weekSelector = document.getElementById('week');
 const matchesContainer = document.getElementById('matches-container');
+const googleSignInBtn = document.getElementById('google-sign-in-btn');
+const signOutBtn = document.getElementById('sign-out-btn');
+const userInfo = document.getElementById('user-info');
+const userEmail = document.getElementById('user-email');
 
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
 for (let i = 1; i <= 34; i++) {
@@ -83,41 +87,6 @@ function createMatchElement(match) {
     return matchDiv;
 }
 
-// Fetch matches for the first week by default
-fetchMatchesByWeek(1);
-
-// Import Firebase libraries
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, FacebookAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-// Your Firebase configuration (replace with your own)
-const firebaseConfig = {
-  apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
-
-  authDomain: "sportf-8c772.firebaseapp.com",
-
-  databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
-
-  projectId: "sportf-8c772",
-
-  storageBucket: "sportf-8c772.appspot.com",
-
-  messagingSenderId: "523775447476",
-
-  appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const database = getDatabase(app);
-
-const googleSignInBtn = document.getElementById('google-sign-in-btn');
-const signOutBtn = document.getElementById('sign-out-btn');
-const userInfo = document.getElementById('user-info');
-const userEmail = document.getElementById('user-email');
-
 // Sign in with Google
 googleSignInBtn.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
@@ -129,7 +98,6 @@ googleSignInBtn.addEventListener('click', () => {
             console.error("Error during Google Sign-In:", error);
         });
 });
-
 
 // Sign out
 signOutBtn.addEventListener('click', () => {
@@ -155,3 +123,6 @@ onAuthStateChanged(auth, (user) => {
         googleSignInBtn.style.display = 'block';
     }
 });
+
+// Fetch matches for the first week by default
+fetchMatchesByWeek(1);
