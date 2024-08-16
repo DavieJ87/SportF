@@ -183,7 +183,7 @@ googleSignInBtn.addEventListener('click', () => {
             console.log("Google Sign-In successful:", result.user);
         })
         .catch((error) => {
-            console.error("Error during Google Sign-In:", error);
+            console.error("Error during Google Sign-In:", error.code, error.message);
         });
 });
 
