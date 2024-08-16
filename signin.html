@@ -2,23 +2,68 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In - Bundesliga Schedule</title>
-    <link rel="stylesheet" href="assets/style.css">
-    <script defer src="assets/app.js"></script>
-    <!-- Include Firebase SDK -->
-    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-    <script defer src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <title>Google Sign-In</title>
 </head>
 <body>
-    <h1>Sign In</h1>
-    <div id="sign-in-container">
-        <button id="google-sign-in-btn">Sign in with Google</button>
-    </div>
-    <div id="user-info" style="display: none;">
-        <p id="user-email"></p>
-        <button id="sign-out-btn">Sign Out</button>
-    </div>
+    <!-- Sign-in button -->
+    <button id="googleSignInButton">Sign in with Google</button>
+    
+    <!-- Message area -->
+    <p id="welcomeMessage"></p>
+
+    <!-- Firebase configuration and scripts -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+  apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
+  authDomain: "sportf-8c772.firebaseapp.com",
+  databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
+  projectId: "sportf-8c772",
+  storageBucket: "sportf-8c772.appspot.com",
+  messagingSenderId: "523775447476",
+  appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Event listener for Google sign-in button
+        const signInButton = document.getElementById("googleSignInButton");
+
+        // Function to handle Google sign-in
+        function googleSignIn() {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    console.log("Google Sign-In successful:", result.user);
+                })
+                .catch((error) => {
+                    console.error("Error during Google Sign-In:", error);
+                });
+        }
+
+        // Adding the event listener
+        if (signInButton) {
+            signInButton.addEventListener("click", googleSignIn);
+        } else {
+            console.error("Google sign-in button not found.");
+        }
+
+        // Listening to authentication state changes
+        onAuthStateChanged(auth, (user) => {
+            const welcomeMessage = document.getElementById("welcomeMessage");
+            if (user) {
+                welcomeMessage.textContent = `Welcome, ${user.displayName}`;
+            } else {
+                welcomeMessage.textContent = "Please sign in.";
+            }
+        });
+    </script>
 </body>
 </html>
