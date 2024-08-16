@@ -1,8 +1,7 @@
 // Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
+import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase configuration
 
@@ -62,6 +61,7 @@ function fetchMatchesByWeek(week) {
     });
 }
 
+
 // Function to create a match element
 function createMatchElement(match) {
     const matchDiv = document.createElement('div');
@@ -79,12 +79,100 @@ function createMatchElement(match) {
     const status = document.createElement('p');
     status.textContent = `Status: ${match.status}`;
 
+    // Prediction section
+    const predictionDiv = document.createElement('div');
+    predictionDiv.className = 'prediction';
+
+    const homeScoreInput = document.createElement('input');
+    homeScoreInput.type = 'number';
+    homeScoreInput.className = 'home-score';
+    homeScoreInput.placeholder = 'Home Score';
+
+    const awayScoreInput = document.createElement('input');
+    awayScoreInput.type = 'number';
+    awayScoreInput.className = 'away-score';
+    awayScoreInput.placeholder = 'Away Score';
+
+    const outcomeSelect = document.createElement('select');
+    outcomeSelect.className = 'outcome-select';
+    const homeOption = document.createElement('option');
+    homeOption.value = 'home';
+    homeOption.textContent = 'Home Win';
+    const awayOption = document.createElement('option');
+    awayOption.value = 'away';
+    awayOption.textContent = 'Away Win';
+    const drawOption = document.createElement('option');
+    drawOption.value = 'draw';
+    drawOption.textContent = 'Draw';
+    outcomeSelect.appendChild(homeOption);
+    outcomeSelect.appendChild(awayOption);
+    outcomeSelect.appendChild(drawOption);
+
+    const submitButton = document.createElement('button');
+    submitButton.className = 'submit-prediction';
+    submitButton.textContent = 'Submit Prediction';
+
+    // Append inputs to predictionDiv
+    predictionDiv.appendChild(homeScoreInput);
+    predictionDiv.appendChild(awayScoreInput);
+    predictionDiv.appendChild(outcomeSelect);
+    predictionDiv.appendChild(submitButton);
+
     matchDiv.appendChild(title);
     matchDiv.appendChild(date);
     matchDiv.appendChild(score);
     matchDiv.appendChild(status);
+    matchDiv.appendChild(predictionDiv);
+
+    // Event listener for prediction submission
+    submitButton.addEventListener('click', () => {
+        const predictedHomeScore = parseInt(homeScoreInput.value);
+        const predictedAwayScore = parseInt(awayScoreInput.value);
+        const predictedOutcome = outcomeSelect.value;
+
+        if (isNaN(predictedHomeScore) || isNaN(predictedAwayScore)) {
+            alert('Please enter valid scores for both teams.');
+            return;
+        }
+
+        savePrediction(match.match_id, predictedHomeScore, predictedAwayScore, predictedOutcome);
+    });
 
     return matchDiv;
+}
+
+// Function to save prediction
+function savePrediction(matchId, homeScore, awayScore, outcome) {
+    const userId = auth.currentUser.uid;
+    const predictionsRef = ref(database, `predictions/${userId}/${matchId}`);
+    
+    set(predictionsRef, {
+        predicted_home_score: homeScore,
+        predicted_away_score: awayScore,
+        predicted_outcome: outcome
+    }).then(() => {
+        alert('Prediction saved successfully!');
+    }).catch((error) => {
+        console.error('Error saving prediction:', error);
+    });
+}
+
+// Function to calculate points
+function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, predictedAwayScore, predictedOutcome) {
+    let points = 0;
+
+    const actualOutcome = actualHomeScore > actualAwayScore ? 'home' :
+                          actualHomeScore < actualAwayScore ? 'away' : 'draw';
+
+    if (actualOutcome === predictedOutcome) {
+        points += 1; // 1 point for correct outcome
+    }
+
+    if (actualHomeScore === predictedHomeScore && actualAwayScore === predictedAwayScore) {
+        points += 2; // 2 points for exact score
+    }
+
+    return points;
 }
 
 // Sign in with Google
@@ -123,6 +211,27 @@ onAuthStateChanged(auth, (user) => {
         googleSignInBtn.style.display = 'block';
     }
 });
+
+// Event listener for Google sign-in
+googleSignInBtn.addEventListener('click', () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            console.log("Google Sign-In successful:", result.user);
+
+            // Add or update user data in the database
+            const user = result.user;
+            const userRef = ref(database, 'users/' + user.uid);
+            set(userRef, {
+                email: user.email,
+                points: 0 // Initialize points if not already set
+            });
+        })
+        .catch((error) => {
+            console.error("Error during Google Sign-In:", error);
+        });
+});
+
 
 // Fetch matches for the first week by default
 fetchMatchesByWeek(1);
