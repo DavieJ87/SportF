@@ -175,17 +175,36 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
     return points;
 }
 
-// Sign in with Google
-googleSignInBtn.addEventListener('click', () => {
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then((result) => {
-            console.log("Google Sign-In successful:", result.user);
-        })
-        .catch((error) => {
-            console.error("Error during Google Sign-In:", error.code, error.message);
-        });
-});
+// Create an instance of the Google provider object
+const provider = new GoogleAuthProvider();
+
+// Sign in with a popup
+function googleSignIn() {
+  signInWithPopup(auth, provider)
+    .then((result) => {
+      // This gives you a Google Access Token. You can use it to access the Google API.
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      const token = credential.accessToken;
+
+      // The signed-in user info
+      const user = result.user;
+      console.log("User signed in: ", user);
+      
+      // Perform any additional actions like saving user details in the database
+    })
+    .catch((error) => {
+      // Handle errors here
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      const email = error.customData.email;
+      const credential = GoogleAuthProvider.credentialFromError(error);
+      console.error("Error during Google Sign-In: ", errorCode, errorMessage);
+    });
+}
+
+// Call the googleSignIn function on button click
+document.getElementById("googleSignInButton").addEventListener("click", googleSignIn);
+
 
 // Sign out
 signOutBtn.addEventListener('click', () => {
@@ -194,7 +213,7 @@ signOutBtn.addEventListener('click', () => {
             console.log("Sign-Out successful.");
         })
         .catch((error) => {
-            console.error("Error during Sign-Out:", error);
+            console.error("Error during Sign-Out:", error.code, error.message);
         });
 });
 
