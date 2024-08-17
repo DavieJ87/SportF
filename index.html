@@ -3,40 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bundesliga Schedule</title>
-    <link rel="stylesheet" href="assets/style.css">
-    <!-- Include Firebase CDN scripts with type="module" -->
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-    <script type="module" src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
-    <script type="module" src="assets/app.js"></script>
+    <title>Sign In</title>
+    <style>
+        /* Simple styling for the sign-in page */
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        #signInContainer {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        #googleSignInButton {
+            padding: 10px 20px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Bundesliga 2023/2024 Schedule</h1>
-    <div id="week-selector">
-        <label for="week">Select Week: </label>
-        <select id="week"></select>
+    <div id="signInContainer">
+        <h2>Welcome to Bundesliga Predictor</h2>
+        <button id="googleSignInButton">Sign in with Google</button>
     </div>
-    <div id="matches-container">
-        <!-- Match data will be displayed here -->
-		<!-- Inside the match element creation -->
-<!-- <div id="prediction-container">
-    <h2>Predict the Outcome</h2>
-    <form id="prediction-form">
-        <label for="predicted-score">Enter Predicted Score:</label>
-        <input type="text" id="predicted-score" placeholder="e.g., 2-1" required>
-        <br>
-        <label for="predicted-outcome">Select Outcome:</label>
-        <select id="predicted-outcome" required>
-            <option value="home">Home Team Wins</option>
-            <option value="away">Away Team Wins</option>
-            <option value="draw">Draw</option>
-        </select>
-        <br>
-        <button type="submit">Submit Prediction</button>
-    </form>
-    <div id="prediction-status"></div>
-</div> -->
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+  apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
+  authDomain: "sportf-8c772.firebaseapp.com",
+  databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
+  projectId: "sportf-8c772",
+  storageBucket: "sportf-8c772.appspot.com",
+  messagingSenderId: "523775447476",
+  appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
+
+        // Handle Google Sign-In
+        document.getElementById("googleSignInButton").addEventListener("click", () => {
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    console.log("Google Sign-In successful:", result.user);
+                    window.location.href = "/profile.html"; // Redirect to profile page
+                })
+                .catch((error) => {
+                    console.error("Error during Google Sign-In:", error);
+                });
+        });
+    </script>
 </body>
 </html>
