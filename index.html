@@ -63,7 +63,7 @@
             signInWithPopup(auth, provider)
                 .then((result) => {
                     console.log("Google Sign-In successful:", result.user);
-                    window.location.href = "/profile.html"; // Redirect to profile page
+                    window.location.href = "/home.html"; // Redirect to profile page
                 })
                 .catch((error) => {
                     console.error("Error during Google Sign-In:", error);
