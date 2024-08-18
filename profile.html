@@ -69,7 +69,7 @@
         const db = getDatabase(app);
 
 
-const userId = user.uid;
+const userId = auth.currentUser.uid;
 const userRef = db.ref('users/' + userId);
 
 userRef.once('value').then((snapshot) => {
