@@ -203,7 +203,7 @@ function googleSignIn() {
 }
 
 // Call the googleSignIn function on button click
-document.getElementById("googleSignInButton").addEventListener("click", googleSignIn);
+// document.getElementById("googleSignInButton").addEventListener("click", googleSignIn);
 
 
 // Sign out
