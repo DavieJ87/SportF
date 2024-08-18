@@ -38,19 +38,12 @@
         <button id="googleSignInButton">Sign in with Google</button>
     </div>
 
-<!-- Firebase App (required) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
 
-<!-- Firebase Auth (optional if using authentication) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js"></script>
-
-<!-- Firebase Realtime Database -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
-	
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-
+	import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+	    
         // Firebase configuration
         const firebaseConfig = {
   apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
