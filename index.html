@@ -53,11 +53,11 @@
   appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
         };
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
+	// Initialize Firebase
+	firebase.initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
-	const db = getdatabase(app);
+	const db = firebase.database();
 
         // Handle Google Sign-In
         document.getElementById("googleSignInButton").addEventListener("click", () => {
