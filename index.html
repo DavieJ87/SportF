@@ -34,7 +34,7 @@
 </head>
 <body>
     <div id="signInContainer">
-        <h2>Welcome to Bundesliga Predictor</h2>
+        <h2>Welcome to Predictor</h2>
         <button id="googleSignInButton">Sign in with Google</button>
     </div>
 
@@ -57,6 +57,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
+		const db = firebase.database();
 
         // Handle Google Sign-In
         document.getElementById("googleSignInButton").addEventListener("click", () => {
@@ -64,11 +65,23 @@
                 .then((result) => {
                     console.log("Google Sign-In successful:", result.user);
                     window.location.href = "/SportF/home.html"; // Redirect to home page
+					  // Save or update user info in the database
+					saveUserData(user);
                 })
                 .catch((error) => {
                     console.error("Error during Google Sign-In:", error);
                 });
         });
+		
+		function saveUserData(user) {
+    const userRef = db.ref('users/' + user.uid);
+    userRef.set({
+        name: user.displayName,
+        email: user.email,
+        profilePicture: user.photoURL,
+        ranking: 0 // Initial ranking
+    });
+}
     </script>
 </body>
 </html>
