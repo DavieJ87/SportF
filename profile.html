@@ -41,11 +41,15 @@
     </style>
 </head>
 <body>
-<h1>Welcome, <span id="user-name"></span></h1>
-<p>Email: <span id="user-email"></span></p>
-<p id="user-ranking"></p>
-<h2>Your Predictions</h2>
-<div id="predictions"></div>
+    <div id="profileContainer">
+        <h2>User Profile</h2>
+        <div id="userInfo"></div>
+        <h3>Last Predictions</h3>
+        <div id="predictions"></div>
+        <h3>Ranking</h3>
+        <div id="ranking"></div>
+        <a id="scheduleLink" href="/SportF/home.html">View Bundesliga Schedule</a>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -64,36 +68,50 @@
         };
 
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        // const app = initializeApp(firebaseConfig);
+        const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
 
+        // Check if the user is signed in
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Display user info
+                document.getElementById("userInfo").innerHTML = `
+                    <p>Name: ${user.displayName}</p>
+                    <p>Email: ${user.email}</p>
+                `;
 
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        // User is signed in.
-        const userId = user.uid;
+                // Fetch user predictions and ranking from Firebase
+                const userId = user.uid;
+                const userRef = ref(db, `users/${userId}`);
 
-        // You can now safely use the user's ID to interact with the database or other services
-        console.log("User ID:", userId);
-        
-        // Example: Save or update user data in the database
-        const userRef = firebase.database().ref('users/' + userId);
-        userRef.set({
-            name: user.displayName,
-            email: user.email,
-            profilePicture: user.photoURL,
-            ranking: 0 // Initial ranking
+                get(child(userRef, 'predictions')).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const predictions = snapshot.val();
+                        // Display the last predictions
+                        let predictionsHtml = '';
+                        for (let key in predictions) {
+                            predictionsHtml += `<p>${key}: ${predictions[key].homeTeam} vs ${predictions[key].awayTeam} - Prediction: ${predictions[key].prediction}</p>`;
+                        }
+                        document.getElementById("predictions").innerHTML = predictionsHtml;
+                    } else {
+                        document.getElementById("predictions").innerHTML = "No predictions made.";
+                    }
+                });
+
+                get(child(userRef, 'ranking')).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const ranking = snapshot.val();
+                        document.getElementById("ranking").innerHTML = `<p>Your Ranking: ${ranking}</p>`;
+                    } else {
+                        document.getElementById("ranking").innerHTML = "No ranking available.";
+                    }
+                });
+            } else {
+                // If no user is signed in, redirect to sign-in page
+                window.location.href = "/SportF/index.html";
+            }
         });
-    } else {
-        // User is signed out.
-        console.log("No user is signed in.");
-    }
-});
-    
-
-
     </script>
 </body>
 </html>
