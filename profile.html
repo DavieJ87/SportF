@@ -69,15 +69,27 @@
         const db = getDatabase(app);
 
 
-const userId = auth.currentUser.uid;
-const userRef = db.ref('users/' + userId);
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // User is signed in.
+        const userId = user.uid;
 
-userRef.once('value').then((snapshot) => {
-    const userData = snapshot.val();
-
-    document.getElementById('user-name').textContent = userData.name;
-    document.getElementById('user-email').textContent = userData.email;
-    document.getElementById('user-ranking').textContent = `Ranking: ${userData.ranking}`;
+        // You can now safely use the user's ID to interact with the database or other services
+        console.log("User ID:", userId);
+        
+        // Example: Save or update user data in the database
+        const userRef = firebase.database().ref('users/' + userId);
+        userRef.set({
+            name: user.displayName,
+            email: user.email,
+            profilePicture: user.photoURL,
+            ranking: 0 // Initial ranking
+        });
+    } else {
+        // User is signed out.
+        console.log("No user is signed in.");
+    }
+});
     
     // Display predictions
     const predictions = userData.predictions;
