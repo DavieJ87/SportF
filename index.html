@@ -57,7 +57,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
-		/* const db = firebase.database(); */
+	const db = getdatabase(app);
 
         // Handle Google Sign-In
         document.getElementById("googleSignInButton").addEventListener("click", () => {
