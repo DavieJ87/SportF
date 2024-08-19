@@ -1,17 +1,11 @@
 // Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getDatabase, ref, set, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
-  authDomain: "sportf-8c772.firebaseapp.com",
-  databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
-  projectId: "sportf-8c772",
-  storageBucket: "sportf-8c772.appspot.com",
-  messagingSenderId: "523775447476",
-  appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
+    // Your Firebase configuration
 };
 
 // Initialize Firebase
@@ -42,7 +36,7 @@ weekSelector.addEventListener('change', () => {
     fetchMatchesByWeek(selectedWeek);
 });
 
-// Function to fetch matches for a specific week
+// Function to fetch matches for a specific week and show user's predictions
 function fetchMatchesByWeek(week) {
     const matchesRef = ref(database, 'bundesliga_2023/matches');
     onValue(matchesRef, (snapshot) => {
@@ -52,15 +46,14 @@ function fetchMatchesByWeek(week) {
         for (let matchId in matches) {
             const match = matches[matchId];
             if (match.week_number == week) {
-                const matchElement = createMatchElement(match, matchId); // Pass matchId
-                matchesContainer.appendChild(matchElement);
+                createMatchElement(match, matchId, week);
             }
         }
     });
 }
 
-// Function to create a match element
-function createMatchElement(match, matchId) { // Include matchId as parameter
+// Function to create a match element and show existing predictions
+function createMatchElement(match, matchId, week) {
     const matchDiv = document.createElement('div');
     matchDiv.className = 'match';
 
@@ -70,6 +63,12 @@ function createMatchElement(match, matchId) { // Include matchId as parameter
     const date = document.createElement('p');
     date.textContent = `Date: ${new Date(match.date_time).toLocaleString()}`;
 
+    const score = document.createElement('p');
+    score.textContent = `Score: ${match.home_team_score} - ${match.away_team_score}`;
+
+    const status = document.createElement('p');
+    status.textContent = `Status: ${match.status}`;
+
     // Prediction section
     const predictionDiv = document.createElement('div');
     predictionDiv.className = 'prediction';
@@ -78,17 +77,17 @@ function createMatchElement(match, matchId) { // Include matchId as parameter
     homeScoreInput.type = 'number';
     homeScoreInput.className = 'home-score';
     homeScoreInput.placeholder = 'Home Score';
-    homeScoreInput.dataset.matchId = matchId; // Store match ID in data attribute
+    homeScoreInput.dataset.matchId = matchId;
 
     const awayScoreInput = document.createElement('input');
     awayScoreInput.type = 'number';
     awayScoreInput.className = 'away-score';
     awayScoreInput.placeholder = 'Away Score';
-    awayScoreInput.dataset.matchId = matchId; // Store match ID in data attribute
+    awayScoreInput.dataset.matchId = matchId;
 
     const outcomeSelect = document.createElement('select');
     outcomeSelect.className = 'outcome-select';
-    outcomeSelect.dataset.matchId = matchId; // Store match ID in data attribute
+    outcomeSelect.dataset.matchId = matchId;
 
     const homeOption = document.createElement('option');
     homeOption.value = 'home';
@@ -113,9 +112,34 @@ function createMatchElement(match, matchId) { // Include matchId as parameter
 
     matchDiv.appendChild(title);
     matchDiv.appendChild(date);
+    matchDiv.appendChild(score);
+    matchDiv.appendChild(status);
     matchDiv.appendChild(predictionDiv);
 
-    return matchDiv;
+    // Show user's existing predictions
+    showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcomeSelect);
+
+    matchesContainer.appendChild(matchDiv);
+}
+
+// Function to show existing predictions
+function showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcomeSelect) {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userId = user.uid;
+    const predictionRef = ref(database, `predictions/${userId}/${matchId}`);
+
+    get(predictionRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const prediction = snapshot.val();
+            homeScoreInput.value = prediction.predicted_home_score;
+            awayScoreInput.value = prediction.predicted_away_score;
+            outcomeSelect.value = prediction.predicted_outcome;
+        }
+    }).catch((error) => {
+        console.error('Error fetching prediction:', error);
+    });
 }
 
 // Event listener for week predictions submission
@@ -141,11 +165,11 @@ function gatherWeekPredictions() {
         const predictedHomeScore = parseInt(homeScoreInput.value);
         const predictedAwayScore = parseInt(awayScoreInput.value);
         const predictedOutcome = outcomeSelect.value;
-        const matchId = homeScoreInput.dataset.matchId; // Access match ID
+        const matchId = homeScoreInput.dataset.matchId;
 
         if (!isNaN(predictedHomeScore) && !isNaN(predictedAwayScore)) {
             predictions.push({
-                matchId: matchId, // Ensure matchId is included
+                matchId: matchId,
                 predicted_home_score: predictedHomeScore,
                 predicted_away_score: predictedAwayScore,
                 predicted_outcome: predictedOutcome
