@@ -274,6 +274,49 @@ function saveWeekPredictions(predictions) {
     });
 }
 
+function fetchAndDisplayRankings() {
+    const usersRef = ref(database, 'users');
+    const rankingTableBody = document.getElementById('ranking-table').getElementsByTagName('tbody')[0];
+
+    get(usersRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const usersData = snapshot.val();
+            const usersArray = [];
+
+            // Prepare the users array
+            for (let userId in usersData) {
+                const userData = usersData[userId];
+                usersArray.push({
+                    userId: userId,
+                    displayName: userData.displayName,
+                    totalPoints: userData.total_points || 0
+                });
+            }
+
+            // Sort users by total points in descending order
+            usersArray.sort((a, b) => b.totalPoints - a.totalPoints);
+
+            // Populate the ranking table
+            rankingTableBody.innerHTML = '';
+            usersArray.forEach((user, index) => {
+                const row = rankingTableBody.insertRow();
+                const rankCell = row.insertCell(0);
+                const nameCell = row.insertCell(1);
+                const pointsCell = row.insertCell(2);
+
+                rankCell.textContent = index + 1;
+                nameCell.textContent = user.displayName;
+                pointsCell.textContent = user.totalPoints;
+            });
+        }
+    }).catch((error) => {
+        console.error('Error fetching user rankings:', error);
+    });
+}
+
+// Call this function on the ranking.html page load
+fetchAndDisplayRankings();
+
 
 /* // Handle Google Sign-In
 googleSignInBtn.addEventListener('click', () => {
