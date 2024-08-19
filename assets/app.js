@@ -334,6 +334,39 @@ function fetchAndDisplayRankings() {
 
 // Call this function on the ranking.html page load
 fetchAndDisplayRankings();
+function fetchLastFivePredictions() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userId = user.uid;
+    const predictionsRef = ref(database, `predictions/${userId}`);
+
+    get(predictionsRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const predictions = snapshot.val();
+            const predictionsArray = Object.entries(predictions).map(([key, value]) => ({ matchId: key, ...value }));
+            
+            // Sort predictions by match ID or timestamp (if available)
+            predictionsArray.sort((a, b) => b.matchId - a.matchId);
+
+            // Get the last 5 predictions
+            const lastFive = predictionsArray.slice(0, 5);
+            const lastPredictionsList = document.getElementById('last-predictions-list');
+            lastPredictionsList.innerHTML = ''; // Clear existing list
+
+            lastFive.forEach(prediction => {
+                const li = document.createElement('li');
+                li.textContent = `Match ID: ${prediction.matchId}, Home Score: ${prediction.predicted_home_score}, Away Score: ${prediction.predicted_away_score}, Outcome: ${prediction.predicted_outcome}, Points: ${prediction.points}`;
+                lastPredictionsList.appendChild(li);
+            });
+        }
+    }).catch((error) => {
+        console.error('Error fetching predictions:', error);
+    });
+}
+
+// Call this function on profile.html page load
+fetchLastFivePredictions();
 
 
 /* // Handle Google Sign-In
