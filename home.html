@@ -20,17 +20,5 @@
     <div id="matches-container">
         <!-- Match data will be displayed here -->
 		
-<script type="module">
-
-function addPrediction(userId, matchId, homeTeam, awayTeam, prediction) {
-    const predictionRef = db.ref(`users/${userId}/predictions/${matchId}`);
-    predictionRef.set({
-        homeTeam: homeTeam,
-        awayTeam: awayTeam,
-        prediction: prediction,
-        result: "pending" // Update this later after the match
-    });
-}
-</script>
 </body>
 </html>
