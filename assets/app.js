@@ -191,7 +191,7 @@ function saveWeekPredictions(predictions) {
     });
 }
 
-// Handle Google Sign-In
+/* // Handle Google Sign-In
 googleSignInBtn.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
@@ -239,7 +239,7 @@ onAuthStateChanged(auth, (user) => {
         signOutBtn.style.display = 'none';
         document.getElementById('main-content').style.display = 'none';
     }
-});
+}); */
 
 // Fetch matches for the first week by default
 fetchMatchesByWeek(1);
