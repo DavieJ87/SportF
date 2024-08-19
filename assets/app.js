@@ -5,7 +5,13 @@ import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic
 
 // Firebase configuration
 const firebaseConfig = {
-    // Your Firebase configuration
+  apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
+  authDomain: "sportf-8c772.firebaseapp.com",
+  databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
+  projectId: "sportf-8c772",
+  storageBucket: "sportf-8c772.appspot.com",
+  messagingSenderId: "523775447476",
+  appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
 };
 
 // Initialize Firebase
