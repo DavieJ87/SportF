@@ -67,23 +67,6 @@
             }
         });
 
-        // Function to fetch and display the last 5 predictions
-        function fetchLastPredictions(userId) {
-            const predictionsRef = ref(database, `predictions/${userId}`);
-            onValue(predictionsRef, (snapshot) => {
-                const predictions = snapshot.val();
-                const predictionKeys = Object.keys(predictions || {}).slice(-5).reverse();
-
-                lastPredictions.innerHTML = ''; // Clear previous predictions
-
-                predictionKeys.forEach(key => {
-                    const prediction = predictions[key];
-                    const predictionItem = document.createElement('li');
-                    predictionItem.textContent = `Match: ${key}, Predicted: ${prediction.predicted_home_score} - ${prediction.predicted_away_score}, Outcome: ${prediction.predicted_outcome}`;
-                    lastPredictions.appendChild(predictionItem);
-                });
-            });
-        }
     </script>
 </body>
 </html>
