@@ -7,24 +7,25 @@
 </head>
 <body>
     <h1>User Profile</h1>
-    <div id="user-info"></div>
-    <div id="user-email"></div>
+    <p id="user-info"></p>
+    <p id="user-email"></p>
+    <p id="user-ranking"></p>
 
-    <h2>Last 5 Predictions</h2>
-    <ul id="last-predictions">
-        <!-- Last 5 predictions will be dynamically populated -->
-    </ul>
+    <h2>Your Last 5 Predictions</h2>
+    <ul id="last-predictions-list"></ul>
 
     <!-- Add link to predictions page -->
     <a href="home.html">Go to Predictions Page</a>
 
     <!-- Sign out button -->
     <button id="sign-out-btn">Sign Out</button>
-
+    
+    <script type="module" src="assets/app.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+        
 
         // Firebase configuration and initialization
         const firebaseConfig = {
