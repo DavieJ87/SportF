@@ -69,11 +69,6 @@ function createMatchElement(match, matchId, week) {
     const date = document.createElement('p');
     date.textContent = `Date: ${new Date(match.date_time).toLocaleString()}`;
 
-    const score = document.createElement('p');
-    score.textContent = `Score: ${match.home_team_score} - ${match.away_team_score}`;
-
-    const status = document.createElement('p');
-    status.textContent = `Status: ${match.status}`;
 
     // Prediction section
     const predictionDiv = document.createElement('div');
@@ -118,8 +113,6 @@ function createMatchElement(match, matchId, week) {
 
     matchDiv.appendChild(title);
     matchDiv.appendChild(date);
-    matchDiv.appendChild(score);
-    matchDiv.appendChild(status);
     matchDiv.appendChild(predictionDiv);
 
     // Show user's existing predictions
