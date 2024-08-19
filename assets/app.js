@@ -4,9 +4,7 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signO
 import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase configuration
-
 const firebaseConfig = {
-
   apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
   authDomain: "sportf-8c772.firebaseapp.com",
   databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
@@ -14,7 +12,6 @@ const firebaseConfig = {
   storageBucket: "sportf-8c772.appspot.com",
   messagingSenderId: "523775447476",
   appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
-
 };
 
 // Initialize Firebase
@@ -60,7 +57,6 @@ function fetchMatchesByWeek(week) {
         }
     });
 }
-
 
 // Function to create a match element
 function createMatchElement(match) {
@@ -143,7 +139,13 @@ function createMatchElement(match) {
 
 // Function to save prediction
 function savePrediction(matchId, homeScore, awayScore, outcome) {
-    const userId = auth.currentUser.uid;
+    const user = auth.currentUser;
+    if (!user) {
+        alert("You need to sign in to make predictions.");
+        return;
+    }
+    
+    const userId = user.uid;
     const predictionsRef = ref(database, `predictions/${userId}/${matchId}`);
     
     set(predictionsRef, {
@@ -157,23 +159,55 @@ function savePrediction(matchId, homeScore, awayScore, outcome) {
     });
 }
 
-// Function to calculate points
-function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, predictedAwayScore, predictedOutcome) {
-    let points = 0;
+// Handle Google Sign-In
+googleSignInBtn.addEventListener('click', () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider)
+        .then((result) => {
+            const user = result.user;
+            // You can access the user's information here
+            userInfo.textContent = `Hello, ${user.displayName}`;
+            userEmail.textContent = `Email: ${user.email}`;
+            googleSignInBtn.style.display = 'none';
+            signOutBtn.style.display = 'block';
+            document.getElementById('main-content').style.display = 'block';
+        })
+        .catch((error) => {
+            console.error('Error during sign-in:', error);
+        });
+});
 
-    const actualOutcome = actualHomeScore > actualAwayScore ? 'home' :
-                          actualHomeScore < actualAwayScore ? 'away' : 'draw';
+// Handle Sign-Out
+signOutBtn.addEventListener('click', () => {
+    signOut(auth).then(() => {
+        userInfo.textContent = '';
+        userEmail.textContent = '';
+        googleSignInBtn.style.display = 'block';
+        signOutBtn.style.display = 'none';
+        document.getElementById('main-content').style.display = 'none';
+    }).catch((error) => {
+        console.error('Error during sign-out:', error);
+    });
+});
 
-    if (actualOutcome === predictedOutcome) {
-        points += 1; // 1 point for correct outcome
+// Listen for auth state changes
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // User is signed in
+        userInfo.textContent = `Hello, ${user.displayName}`;
+        userEmail.textContent = `Email: ${user.email}`;
+        googleSignInBtn.style.display = 'none';
+        signOutBtn.style.display = 'block';
+        document.getElementById('main-content').style.display = 'block';
+    } else {
+        // User is signed out
+        userInfo.textContent = '';
+        userEmail.textContent = '';
+        googleSignInBtn.style.display = 'block';
+        signOutBtn.style.display = 'none';
+        document.getElementById('main-content').style.display = 'none';
     }
-
-    if (actualHomeScore === predictedHomeScore && actualAwayScore === predictedAwayScore) {
-        points += 2; // 2 points for exact score
-    }
-
-    return points;
-}
+});
 
 // Fetch matches for the first week by default
 fetchMatchesByWeek(1);
