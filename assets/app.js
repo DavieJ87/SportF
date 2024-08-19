@@ -1,7 +1,7 @@
 // Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getDatabase, ref, set, get, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getDatabase, ref, set, get, onValue, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -26,6 +26,7 @@ const googleSignInBtn = document.getElementById('google-sign-in-btn');
 const signOutBtn = document.getElementById('sign-out-btn');
 const userInfo = document.getElementById('user-info');
 const userEmail = document.getElementById('user-email');
+const submitWeekBtn = document.getElementById('submit-week-btn');
 
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
 for (let i = 1; i <= 34; i++) {
@@ -83,36 +84,38 @@ function createMatchElement(match) {
     homeScoreInput.type = 'number';
     homeScoreInput.className = 'home-score';
     homeScoreInput.placeholder = 'Home Score';
+    homeScoreInput.dataset.matchId = match.match_id; // Store match ID in data attribute
 
     const awayScoreInput = document.createElement('input');
     awayScoreInput.type = 'number';
     awayScoreInput.className = 'away-score';
     awayScoreInput.placeholder = 'Away Score';
+    awayScoreInput.dataset.matchId = match.match_id; // Store match ID in data attribute
 
     const outcomeSelect = document.createElement('select');
     outcomeSelect.className = 'outcome-select';
+    outcomeSelect.dataset.matchId = match.match_id; // Store match ID in data attribute
+
     const homeOption = document.createElement('option');
     homeOption.value = 'home';
     homeOption.textContent = 'Home Win';
+
     const awayOption = document.createElement('option');
     awayOption.value = 'away';
     awayOption.textContent = 'Away Win';
+
     const drawOption = document.createElement('option');
     drawOption.value = 'draw';
     drawOption.textContent = 'Draw';
+
     outcomeSelect.appendChild(homeOption);
     outcomeSelect.appendChild(awayOption);
     outcomeSelect.appendChild(drawOption);
-
-    const submitButton = document.createElement('button');
-    submitButton.className = 'submit-prediction';
-    submitButton.textContent = 'Submit Prediction';
 
     // Append inputs to predictionDiv
     predictionDiv.appendChild(homeScoreInput);
     predictionDiv.appendChild(awayScoreInput);
     predictionDiv.appendChild(outcomeSelect);
-    predictionDiv.appendChild(submitButton);
 
     matchDiv.appendChild(title);
     matchDiv.appendChild(date);
@@ -120,46 +123,75 @@ function createMatchElement(match) {
     matchDiv.appendChild(status);
     matchDiv.appendChild(predictionDiv);
 
-    // Event listener for prediction submission
-    submitButton.addEventListener('click', () => {
-        const predictedHomeScore = parseInt(homeScoreInput.value);
-        const predictedAwayScore = parseInt(awayScoreInput.value);
-        const predictedOutcome = outcomeSelect.value;
-
-        if (isNaN(predictedHomeScore) || isNaN(predictedAwayScore)) {
-            alert('Please enter valid scores for both teams.');
-            return;
-        }
-
-        savePrediction(match.match_id, predictedHomeScore, predictedAwayScore, predictedOutcome);
-    });
-
     return matchDiv;
 }
 
-// Function to save prediction
-function savePrediction(matchId, homeScore, awayScore, outcome) {
+// Event listener for week predictions submission
+submitWeekBtn.addEventListener('click', () => {
+    const predictions = gatherWeekPredictions();
+    if (predictions.length > 0) {
+        saveWeekPredictions(predictions);
+    } else {
+        alert('Please enter predictions for the matches.');
+    }
+});
+
+// Function to gather all predictions for the week
+function gatherWeekPredictions() {
+    const predictions = [];
+    const predictionDivs = matchesContainer.querySelectorAll('.prediction');
+
+    predictionDivs.forEach(predictionDiv => {
+        const homeScoreInput = predictionDiv.querySelector('.home-score');
+        const awayScoreInput = predictionDiv.querySelector('.away-score');
+        const outcomeSelect = predictionDiv.querySelector('.outcome-select');
+
+        const predictedHomeScore = parseInt(homeScoreInput.value);
+        const predictedAwayScore = parseInt(awayScoreInput.value);
+        const predictedOutcome = outcomeSelect.value;
+        const matchId = homeScoreInput.dataset.matchId;
+
+        if (!isNaN(predictedHomeScore) && !isNaN(predictedAwayScore)) {
+            predictions.push({
+                matchId: matchId,
+                predicted_home_score: predictedHomeScore,
+                predicted_away_score: predictedAwayScore,
+                predicted_outcome: predictedOutcome
+            });
+        }
+    });
+
+    return predictions;
+}
+
+// Function to save all predictions for the week
+function saveWeekPredictions(predictions) {
     const user = auth.currentUser;
     if (!user) {
-        alert("You need to sign in to make predictions.");
+        alert("You need to sign in to submit predictions.");
         return;
     }
     
     const userId = user.uid;
-    const predictionsRef = ref(database, `predictions/${userId}/${matchId}`);
-    
-    set(predictionsRef, {
-        predicted_home_score: homeScore,
-        predicted_away_score: awayScore,
-        predicted_outcome: outcome
-    }).then(() => {
-        alert('Prediction saved successfully!');
+    const updates = {};
+
+    predictions.forEach(prediction => {
+        const predictionPath = `predictions/${userId}/${prediction.matchId}`;
+        updates[predictionPath] = {
+            predicted_home_score: prediction.predicted_home_score,
+            predicted_away_score: prediction.predicted_away_score,
+            predicted_outcome: prediction.predicted_outcome
+        };
+    });
+
+    update(ref(database), updates).then(() => {
+        alert('Week predictions saved successfully!');
     }).catch((error) => {
-        console.error('Error saving prediction:', error);
+        console.error('Error saving predictions:', error);
     });
 }
 
-/* // Handle Google Sign-In
+// Handle Google Sign-In
 googleSignInBtn.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
@@ -207,7 +239,7 @@ onAuthStateChanged(auth, (user) => {
         signOutBtn.style.display = 'none';
         document.getElementById('main-content').style.display = 'none';
     }
-}); */
+});
 
 // Fetch matches for the first week by default
 fetchMatchesByWeek(1);
