@@ -70,6 +70,11 @@ function createMatchElement(match, matchId) { // Include matchId as parameter
     const date = document.createElement('p');
     date.textContent = `Date: ${new Date(match.date_time).toLocaleString()}`;
 
+      const score = document.createElement('p');
+    score.textContent = `Score: ${match.home_team_score} - ${match.away_team_score}`;
+
+    const status = document.createElement('p');
+    status.textContent = `Status: ${match.status}`;
 
     // Prediction section
     const predictionDiv = document.createElement('div');
