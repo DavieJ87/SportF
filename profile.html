@@ -79,6 +79,46 @@
                 });
             });
         }
+
+        function fetchAndDisplayUserRank() {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userId = user.uid;
+    const usersRef = ref(database, 'users');
+    const userRanking = document.getElementById('user-ranking');
+
+    get(usersRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const usersData = snapshot.val();
+            const usersArray = [];
+
+            for (let userId in usersData) {
+                const userData = usersData[userId];
+                usersArray.push({
+                    userId: userId,
+                    displayName: userData.displayName,
+                    totalPoints: userData.total_points || 0
+                });
+            }
+
+            // Sort users by total points in descending order
+            usersArray.sort((a, b) => b.totalPoints - a.totalPoints);
+
+            // Find the current user's rank
+            const userRank = usersArray.findIndex(user => user.userId === userId) + 1;
+            const totalPoints = usersData[userId].total_points || 0;
+
+            userRanking.textContent = `Your Rank: ${userRank}, Total Points: ${totalPoints}`;
+        }
+    }).catch((error) => {
+        console.error('Error fetching user rank:', error);
+    });
+}
+
+// Call this function on profile.html page load
+fetchAndDisplayUserRank();
+
     </script>
 </body>
 </html>
