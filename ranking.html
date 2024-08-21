@@ -4,29 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Rankings</title>
-    <script type="module" src="assets/app.js"></script>
 </head>
 <body>
-
-        <div id="week-selector">
-        <label for="week">Select Week: </label>
-        <select id="week"></select>
-    </div>
     <h1>User Rankings</h1>
-    <table id="ranking-table">
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>User</th>
-                <th>Total Points</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Rankings will be dynamically populated here -->
-        </tbody>
-    </table>
-<div id="ranking-container"></div>
-    <a href="profile.html">Back to Profile</a>
+    <div id="ranking-container"></div>
 
+    <!-- Link to the ranking.js file -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+    <script src="ranking.js"></script>
 </body>
 </html>
