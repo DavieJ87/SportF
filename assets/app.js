@@ -248,7 +248,7 @@ function saveWeekPredictions(predictions) {
         // Update the predictions in the database
         update(ref(database), updates).then(() => {
             // Update the user's total points in the database
-            const userPointsRef = ref(database, `users/${userId}/total_points`);
+            const userPointsRef = ref(database, `rankings/${userId}/total_points`);
             get(userPointsRef).then(userSnapshot => {
                 let currentPoints = userSnapshot.exists() ? userSnapshot.val() : 0;
                 currentPoints += totalPoints;
