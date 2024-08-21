@@ -17,7 +17,7 @@ const firebaseConfig = {
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
 
-document.addEventListener('DOMContentLoaded', () => {
+const rankingContainer = document.addEventListener('DOMContentLoaded', () => {
 
 
 if (rankingContainer) {
