@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 if (rankingContainer) {
-        const rankingsRef = ref(database, 'rankings/');
+        const rankingsRef = ref(database, 'users/');
         get(rankingsRef).then((snapshot) => {
             if (snapshot.exists()) {
                 const rankings = snapshot.val();
