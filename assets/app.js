@@ -179,6 +179,26 @@ function gatherWeekPredictions() {
     return predictions;
 }
 
+// Function to calculate points based on the prediction
+function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, predictedAwayScore, predictedOutcome) {
+    let points = 0;
+
+    // Determine actual outcome
+    const actualOutcome = actualHomeScore > actualAwayScore ? 'home' :
+                          actualHomeScore < actualAwayScore ? 'away' : 'draw';
+
+    if (actualOutcome === predictedOutcome) {
+        points += 1; // 1 point for correct outcome
+    }
+
+    if (actualHomeScore === predictedHomeScore && actualAwayScore === predictedAwayScore) {
+        points += 3; // 3 points for exact score
+    }
+
+    return points;
+}
+
+// Update the saveWeekPredictions function to calculate and store points
 function saveWeekPredictions(predictions) {
     const user = auth.currentUser;
     if (!user) {
@@ -198,25 +218,17 @@ function saveWeekPredictions(predictions) {
                 const matchData = snapshot.val();
                 const actualHomeScore = matchData.home_team_score;
                 const actualAwayScore = matchData.away_team_score;
+                
+                const points = calculatePoints(actualHomeScore, actualAwayScore, prediction.predicted_home_score, prediction.predicted_away_score, prediction.predicted_outcome);
 
-                // Calculate points
-                const points = calculatePoints(
-                    actualHomeScore,
-                    actualAwayScore,
-                    prediction.predicted_home_score,
-                    prediction.predicted_away_score,
-                    prediction.predicted_outcome
-                );
-
-                // Store the prediction and points
                 updates[predictionPath] = {
                     predicted_home_score: prediction.predicted_home_score,
                     predicted_away_score: prediction.predicted_away_score,
                     predicted_outcome: prediction.predicted_outcome,
-                    points: points
+                    points: points // Store points in the database
                 };
 
-                // Update the user's total points
+                // Also update the user's total points in the database
                 const userPointsRef = ref(database, `users/${userId}/total_points`);
                 get(userPointsRef).then((userSnapshot) => {
                     let currentPoints = userSnapshot.exists() ? userSnapshot.val() : 0;
@@ -225,8 +237,6 @@ function saveWeekPredictions(predictions) {
                     set(userPointsRef, currentPoints);
                 });
             }
-        }).catch((error) => {
-            console.error('Error fetching match data:', error);
         });
     });
 
@@ -237,25 +247,6 @@ function saveWeekPredictions(predictions) {
     });
 }
 
-
-/* // Function to calculate points based on the prediction
-function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, predictedAwayScore, predictedOutcome) {
-    let points = 0;
-
-    // Determine actual outcome
-    const actualOutcome = actualHomeScore > actualAwayScore ? 'home' :
-                          actualHomeScore < actualAwayScore ? 'away' : 'draw';
-
-    if (actualOutcome === predictedOutcome) {
-        points += 1; // 1 point for correct outcome
-    }
-
-    if (actualHomeScore === predictedHomeScore && actualAwayScore === predictedAwayScore) {
-        points += 3; // 3 points for exact score
-    }
-
-    return points;
-} */
 
 function fetchLastFivePredictions() {
     const user = auth.currentUser;
