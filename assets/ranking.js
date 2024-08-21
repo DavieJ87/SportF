@@ -12,38 +12,30 @@ const firebaseConfig = {
   appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Firebase (ensure this matches your other files)
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-// Fetch and display user rankings
-const rankingsContainer = document.getElementById('rankings-container');
+    const rankingContainer = document.getElementById('ranking-container');
 
-function displayRankings() {
-    const usersRef = ref(database, 'users');
-
-    onValue(usersRef, (snapshot) => {
-        const users = snapshot.val();
-        const rankings = [];
-
-        for (let userId in users) {
-            const user = users[userId];
-            rankings.push({
-                email: user.email,
-                points: user.points || 0
-            });
-        }
-
-        rankings.sort((a, b) => b.points - a.points);
-
-        rankingsContainer.innerHTML = '';
-        rankings.forEach((user, index) => {
-            const rankDiv = document.createElement('div');
-            rankDiv.className = 'rank';
-            rankDiv.textContent = `${index + 1}. ${user.email} - ${user.points} points`;
-            rankingsContainer.appendChild(rankDiv);
+    if (rankingContainer) {
+        const rankingsRef = ref(database, 'rankings/');
+        get(rankingsRef).then((snapshot) => {
+            if (snapshot.exists()) {
+                const rankings = snapshot.val();
+                Object.entries(rankings).forEach(([userId, ranking]) => {
+                    const rankingElement = document.createElement('div');
+                    rankingElement.textContent = `${ranking.userName}: ${ranking.points} points`;
+                    rankingContainer.appendChild(rankingElement);
+                });
+            } else {
+                rankingContainer.textContent = "No rankings available.";
+            }
+        }).catch((error) => {
+            console.error('Error fetching rankings:', error);
         });
-    });
-}
-
-displayRankings();
+    } else {
+        console.error("Ranking container element not found!");
+    }
+});
