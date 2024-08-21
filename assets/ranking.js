@@ -1,6 +1,7 @@
+// Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 // Your Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
@@ -12,10 +13,12 @@ const firebaseConfig = {
   appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
 };
 
-document.addEventListener('DOMContentLoaded', () => {
     // Initialize Firebase (ensure this matches your other files)
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
+
+document.addEventListener('DOMContentLoaded', () => {
+
 
     const rankingContainer = document.getElementById('ranking-container');
 
