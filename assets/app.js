@@ -335,30 +335,6 @@ function fetchAndDisplayRankings() {
 // Call this function on the ranking.html page load
 fetchAndDisplayRankings();
 
-document.addEventListener('DOMContentLoaded', () => {
-    const rankingContainer = document.getElementById('ranking-container');
-
-    if (rankingContainer) {
-        const rankingsRef = ref(database, 'rankings/');
-        get(rankingsRef).then((snapshot) => {
-            if (snapshot.exists()) {
-                const rankings = snapshot.val();
-                Object.entries(rankings).forEach(([userId, ranking]) => {
-                    const rankingElement = document.createElement('div');
-                    rankingElement.textContent = `${ranking.userName}: ${ranking.points} points`;
-                    rankingContainer.appendChild(rankingElement);
-                });
-            } else {
-                rankingContainer.textContent = "No rankings available.";
-            }
-        }).catch((error) => {
-            console.error('Error fetching rankings:', error);
-        });
-    } else {
-        console.error("Ranking container element not found!");
-    }
-});
-
 /* // Handle Google Sign-In
 googleSignInBtn.addEventListener('click', () => {
     const provider = new GoogleAuthProvider();
