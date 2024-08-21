@@ -20,14 +20,17 @@ const firebaseConfig = {
 document.addEventListener('DOMContentLoaded', () => {
 
 
-    const rankingContainer = document.getElementById('ranking-container');
-
-    if (rankingContainer) {
+if (rankingContainer) {
         const rankingsRef = ref(database, 'rankings/');
         get(rankingsRef).then((snapshot) => {
             if (snapshot.exists()) {
                 const rankings = snapshot.val();
-                Object.entries(rankings).forEach(([userId, ranking]) => {
+
+                // Sort rankings by points
+                const sortedRankings = Object.entries(rankings).sort(([, a], [, b]) => b.points - a.points);
+
+                // Append each ranking to the container
+                sortedRankings.forEach(([userId, ranking]) => {
                     const rankingElement = document.createElement('div');
                     rankingElement.textContent = `${ranking.userName}: ${ranking.points} points`;
                     rankingContainer.appendChild(rankingElement);
@@ -37,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }).catch((error) => {
             console.error('Error fetching rankings:', error);
+            rankingContainer.textContent = "Error fetching rankings.";
         });
     } else {
         console.error("Ranking container element not found!");
