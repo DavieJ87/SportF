@@ -198,52 +198,70 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
     return points;
 }
 
-// Update the saveWeekPredictions function to calculate and store points
+// Function to save predictions and calculate points for a selected week
 function saveWeekPredictions(predictions) {
     const user = auth.currentUser;
     if (!user) {
         alert("You need to sign in to submit predictions.");
         return;
     }
-    
+
     const userId = user.uid;
     const updates = {};
+    let totalPoints = 0;
 
-    predictions.forEach(prediction => {
-        const predictionPath = `predictions/${userId}/${prediction.matchId}`;
+    // Process all predictions and ensure each operation completes before updating the database
+    const predictionPromises = predictions.map(prediction => {
         const matchRef = ref(database, `bundesliga_2023/matches/${prediction.matchId}`);
 
-        get(matchRef).then((snapshot) => {
+        return get(matchRef).then(snapshot => {
             if (snapshot.exists()) {
                 const matchData = snapshot.val();
                 const actualHomeScore = matchData.home_team_score;
                 const actualAwayScore = matchData.away_team_score;
-                
-                const points = calculatePoints(actualHomeScore, actualAwayScore, prediction.predicted_home_score, prediction.predicted_away_score, prediction.predicted_outcome);
 
-                updates[predictionPath] = {
+                // Calculate points based on prediction and actual match results
+                const points = calculatePoints(
+                    actualHomeScore, 
+                    actualAwayScore, 
+                    prediction.predicted_home_score, 
+                    prediction.predicted_away_score, 
+                    prediction.predicted_outcome
+                );
+
+                // Accumulate points to be added to the user's total
+                totalPoints += points;
+
+                // Prepare data to update in the database
+                updates[`predictions/${userId}/${prediction.matchId}`] = {
                     predicted_home_score: prediction.predicted_home_score,
                     predicted_away_score: prediction.predicted_away_score,
                     predicted_outcome: prediction.predicted_outcome,
-                    points: points // Store points in the database
+                    points: points // Store points with the prediction
                 };
-
-                // Also update the user's total points in the database
-                const userPointsRef = ref(database, `users/${userId}/total_points`);
-                get(userPointsRef).then((userSnapshot) => {
-                    let currentPoints = userSnapshot.exists() ? userSnapshot.val() : 0;
-                    currentPoints += points;
-
-                    set(userPointsRef, currentPoints);
-                });
             }
         });
     });
 
-    update(ref(database), updates).then(() => {
-        alert('Week predictions saved successfully!');
-    }).catch((error) => {
-        console.error('Error saving predictions:', error);
+    // Wait for all predictions to be processed
+    Promise.all(predictionPromises).then(() => {
+        // Update the predictions in the database
+        update(ref(database), updates).then(() => {
+            // Update the user's total points in the database
+            const userPointsRef = ref(database, `users/${userId}/total_points`);
+            get(userPointsRef).then(userSnapshot => {
+                let currentPoints = userSnapshot.exists() ? userSnapshot.val() : 0;
+                currentPoints += totalPoints;
+
+                set(userPointsRef, currentPoints).then(() => {
+                    alert('Week predictions saved successfully!');
+                });
+            });
+        }).catch(error => {
+            console.error('Error saving predictions:', error);
+        });
+    }).catch(error => {
+        console.error('Error processing predictions:', error);
     });
 }
 
