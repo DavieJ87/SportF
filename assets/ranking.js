@@ -14,35 +14,44 @@ const firebaseConfig = {
 };
 
     // Initialize Firebase (ensure this matches your other files)
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+   const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-const rankingContainer = document.addEventListener('DOMContentLoaded', () => {
+function fetchAndDisplayRankings() {
+    const rankingsRef = ref(database, 'users/');
+    
+    get(rankingsRef).then(snapshot => {
+        if (snapshot.exists()) {
+            const usersData = snapshot.val();
+            const rankings = [];
 
+            // Loop through each user and calculate their total points
+            for (const userId in usersData) {
+                const user = usersData[userId];
+                const totalPoints = user.total_points || 0;
 
-if (rankingContainer) {
-        const rankingsRef = ref(database, 'users/');
-        get(rankingsRef).then((snapshot) => {
-            if (snapshot.exists()) {
-                const rankings = snapshot.val();
-
-                // Sort rankings by points
-                const sortedRankings = Object.entries(rankings).sort(([, a], [, b]) => b.points - a.points);
-
-                // Append each ranking to the container
-                sortedRankings.forEach(([userId, ranking]) => {
-                    const rankingElement = document.createElement('div');
-                    rankingElement.textContent = `${ranking.userName}: ${ranking.points} points`;
-                    rankingContainer.appendChild(rankingElement);
-                });
-            } else {
-                rankingContainer.textContent = "No rankings available.";
+                rankings.push({ userId: userId, totalPoints: totalPoints, email: user.email });
             }
-        }).catch((error) => {
-            console.error('Error fetching rankings:', error);
-            rankingContainer.textContent = "Error fetching rankings.";
-        });
-    } else {
-        console.error("Ranking container element not found!");
-    }
-});
+
+            // Sort users by total points in descending order
+            rankings.sort((a, b) => b.totalPoints - a.totalPoints);
+
+            // Display the rankings
+            const rankingList = document.getElementById('ranking-list');
+            rankingList.innerHTML = ''; // Clear the list first
+
+            rankings.forEach((ranking, index) => {
+                const rankingItem = document.createElement('li');
+                rankingItem.textContent = `${index + 1}. ${ranking.email} - ${ranking.totalPoints} points`;
+                rankingList.appendChild(rankingItem);
+            });
+        } else {
+            document.getElementById('ranking-list').textContent = "No rankings available.";
+        }
+    }).catch(error => {
+        console.error('Error fetching rankings:', error);
+    });
+}
+
+// Load rankings when the page loads
+document.addEventListener('DOMContentLoaded', fetchAndDisplayRankings);
