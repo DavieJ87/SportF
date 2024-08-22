@@ -430,4 +430,4 @@ onAuthStateChanged(auth, (user) => {
 
 // Fetch matches for the first week by default
 fetchMatchesByWeek(1);
-  });
+
