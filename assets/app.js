@@ -289,7 +289,6 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
     });
           
 
-    }
     });
 }
 
