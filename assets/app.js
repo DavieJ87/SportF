@@ -246,21 +246,23 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
                 weekTotalPoints += points;
 
                 // Prepare the update object for this specific prediction
-                updates[`predictions/${userId}/${prediction.matchId}`] = {
+                updates[`predictions/${userId}/${selectedWeek}/${prediction.matchId}`] = {
                     predicted_home_score: prediction.predicted_home_score,
                     predicted_away_score: prediction.predicted_away_score,
                     predicted_outcome: prediction.predicted_outcome,
                     points: points // Store points for the prediction
                 };
             }
-        });
+        }).catch(error => {
+            console.error('Error fetching match data:', error);
+     });      
     });
 
     // After processing all predictions, update the user's weekly and total points
     Promise.all(predictionPromises).then(() => {
         // Store the total points for the week
-        const weekPointsRef = ref(database, `users/${userId}/weekly_points/${selectedWeek}`);
-        set(weekPointsRef, weekTotalPoints);
+        // const weekPointsRef = ref(database, `users/${userId}/weekly_points/${selectedWeek}`);
+        updates[`users/${userId}/weekly_points/${selectedWeek}`] = weekTotalPoints;
 
         // Update the user's total points
         const userPointsRef = ref(database, `users/${userId}/total_points`);
@@ -268,8 +270,24 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
             let currentPoints = userSnapshot.exists() ? userSnapshot.val() : 0;
             currentPoints += weekTotalPoints;
 
-            set(userPointsRef, currentPoints).then(() => {
+            /* set(userPointsRef, currentPoints).then(() => {
+                alert('Week predictions saved successfully!'); */
+            updates[`users/${userId}/total_points`] = currentPoints;
+
+            // Execute the update operation
+            update(ref(database), updates).then(() => {
                 alert('Week predictions saved successfully!');
+                console.log('Predictions and points successfully saved:', updates);  // Debugging log
+            }).catch(error => {
+                console.error('Error saving predictions and points:', error);
+            });
+        }).catch(error => {
+            console.error('Error fetching user points:', error);
+        });
+    }).catch(error => {
+        console.error('Error processing predictions:', error);
+    });
+          
             });
         });
     }).catch(error => {
