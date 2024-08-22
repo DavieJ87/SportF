@@ -288,8 +288,7 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
         console.error('Error processing predictions:', error);
     });
           
-            
-        });
+
     }).catch(error => {
         console.error('Error saving predictions:', error);
     });
