@@ -210,7 +210,7 @@ submitWeekBtn.addEventListener('click', () => {
     }
 });
 
-console.log('Week Selector Value:', selectedWeek);
+// console.log('Week Selector Value:', selectedWeek);
 console.log('Predictions Array:', predictions);
 
 // Function to save predictions and calculate points for a selected week
