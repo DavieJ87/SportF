@@ -270,8 +270,8 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
             let currentPoints = userSnapshot.exists() ? userSnapshot.val() : 0;
             currentPoints += weekTotalPoints;
 
-            /* set(userPointsRef, currentPoints).then(() => {
-                alert('Week predictions saved successfully!'); */
+             set(userPointsRef, currentPoints).then(() => {
+                alert('Week predictions saved successfully!');
             updates[`users/${userId}/total_points`] = currentPoints;
 
             // Execute the update operation
@@ -289,7 +289,7 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
     });
           
 
-    }).catch(error => {
+    }.catch(error => {
         console.error('Error saving predictions:', error);
     });
 }
