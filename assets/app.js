@@ -34,6 +34,20 @@ const submitWeekBtn = document.getElementById('submit-week-btn');
 
   let selectedWeek = null;
 
+if (submitWeekBtn) {
+        submitWeekBtn.addEventListener('click', () => {
+            const predictions = gatherWeekPredictions();
+            const selectedWeek = weekSelector.value; // Get the selected week value
+            if (predictions.length > 0) {
+                saveWeekPredictions(predictions, selectedWeek);
+            } else {
+                alert('Please enter predictions for the matches.');
+            }
+        });
+    } else {
+        console.error('Submit Week Button not found in the DOM.');
+    }
+  
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
 for (let i = 1; i <= 34; i++) {
     let option = document.createElement('option');
@@ -208,7 +222,7 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
     return points;
 }
 
-submitWeekBtn.addEventListener('click', () => {
+/* submitWeekBtn.addEventListener('click', () => {
     const predictions = gatherWeekPredictions();
     const selectedWeek = weekSelector.value; // Get the selected week value
     if (predictions.length > 0) {
@@ -216,7 +230,7 @@ submitWeekBtn.addEventListener('click', () => {
     } else {
         alert('Please enter predictions for the matches.');
     }
-});
+}); */
 
 // console.log('Week Selector Value:', selectedWeek);
 console.log('Predictions Array:', predictions);
