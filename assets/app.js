@@ -247,7 +247,7 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
 }); */
 
 // console.log('Week Selector Value:', selectedWeek);
-console.log('Predictions Array:', predictions);
+// console.log('Predictions Array:', predictions);
 
 // Function to save predictions and calculate points for a selected week
 function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek parameter
