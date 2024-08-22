@@ -196,6 +196,15 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
     return points;
 }
 
+submitWeekBtn.addEventListener('click', () => {
+    const predictions = gatherWeekPredictions();
+    const selectedWeek = weekSelector.value; // Get the selected week value
+    if (predictions.length > 0) {
+        saveWeekPredictions(predictions, selectedWeek);
+    } else {
+        alert('Please enter predictions for the matches.');
+    }
+});
 
 // Function to save predictions and calculate points for a selected week
 function saveWeekPredictions(predictions) {
