@@ -20,6 +20,7 @@ const auth = getAuth(app);
 const database = getDatabase(app);
 
 // Get references to DOM elements
+document.addEventListener('DOMContentLoaded', () => {
 const weekSelector = document.getElementById('week');
 const matchesContainer = document.getElementById('matches-container');
 const googleSignInBtn = document.getElementById('google-sign-in-btn');
@@ -27,6 +28,7 @@ const signOutBtn = document.getElementById('sign-out-btn');
 const userInfo = document.getElementById('user-info');
 const userEmail = document.getElementById('user-email');
 const submitWeekBtn = document.getElementById('submit-week-btn');
+  });
 
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
 for (let i = 1; i <= 34; i++) {
