@@ -97,7 +97,7 @@ function fetchMatchesByWeek(week) {
     const matchesRef = ref(database, 'bundesliga_2023/matches');
     onValue(matchesRef, (snapshot) => {
         const matches = snapshot.val();
-        matchesContainer.innerHTML = ''; // Clear previous matches
+       // matchesContainer.innerHTML = ''; // Clear previous matches
 
         for (let matchId in matches) {
             const match = matches[matchId];
