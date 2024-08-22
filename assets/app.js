@@ -33,7 +33,13 @@ const userEmail = document.getElementById('user-email');
 const submitWeekBtn = document.getElementById('submit-week-btn');
 
   let selectedWeek = null;
+    // Ensure matchesContainer is defined
+    if (!matchesContainer) {
+        console.error('Matches Container not found in the DOM.');
+        return;
+    }
 
+  
 if (submitWeekBtn) {
         submitWeekBtn.addEventListener('click', () => {
             const predictions = gatherWeekPredictions();
@@ -49,13 +55,21 @@ if (submitWeekBtn) {
     }
   
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
-for (let i = 1; i <= 34; i++) {
-    let option = document.createElement('option');
-    option.value = i;
-    option.text = `Week ${i}`;
-    weekSelector.appendChild(option);
-}
+    if (weekSelector) {
+        for (let i = 1; i <= 34; i++) {
+            let option = document.createElement('option');
+            option.value = i;
+            option.text = `Week ${i}`;
+            weekSelector.appendChild(option);
+        }
 
+        weekSelector.addEventListener('change', () => {
+            const selectedWeek = weekSelector.value;
+            fetchMatchesByWeek(selectedWeek);
+        });
+    } else {
+        console.error('Week Selector not found in the DOM.');
+    }
 // Event listener for week selector change
 weekSelector.addEventListener('change', () => {
     const selectedWeek = weekSelector.value;
