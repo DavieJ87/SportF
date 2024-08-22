@@ -19,6 +19,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const database = getDatabase(app);
 
+// Declare variables to hold DOM elements
+let weekSelector, matchesContainer, googleSignInBtn, signOutBtn, userInfo, userEmail, submitWeekBtn;
+
 // Get references to DOM elements
 document.addEventListener('DOMContentLoaded', () => {
 const weekSelector = document.getElementById('week');
