@@ -32,6 +32,8 @@ const userInfo = document.getElementById('user-info');
 const userEmail = document.getElementById('user-email');
 const submitWeekBtn = document.getElementById('submit-week-btn');
 
+  let selectedWeek = null;
+
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
 for (let i = 1; i <= 34; i++) {
     let option = document.createElement('option');
@@ -46,14 +48,20 @@ weekSelector.addEventListener('change', () => {
     fetchMatchesByWeek(selectedWeek);
 });
 
-  // Event listener for week predictions submission
-submitWeekBtn.addEventListener('click', () => {
-    const predictions = gatherWeekPredictions();
-    if (predictions.length > 0) {
-        saveWeekPredictions(predictions);
-    } else {
-        alert('Please enter predictions for the matches.');
-    }
+    // Event listener for week predictions submission
+    submitWeekBtn.addEventListener('click', () => {
+        if (!selectedWeek) {
+            alert('Please select a week first.');
+            return;
+        }
+
+        const predictions = gatherWeekPredictions();
+        if (predictions.length > 0) {
+            saveWeekPredictions(predictions, selectedWeek); // Pass selectedWeek
+        } else {
+            alert('Please enter predictions for the matches.');
+        }
+    });
 });
 
 // Function to fetch matches for a specific week and show user's predictions
