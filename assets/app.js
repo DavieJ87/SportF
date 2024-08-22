@@ -296,7 +296,7 @@ function fetchLastFivePredictions() {
 fetchLastFivePredictions();
 
 
-function fetchAndDisplayRankings() {
+/* function fetchAndDisplayRankings() {
     const usersRef = ref(database, 'users');
     const rankingTableBody = document.getElementById('ranking-table').getElementsByTagName('tbody')[0];
 
@@ -337,7 +337,7 @@ function fetchAndDisplayRankings() {
 }
 
 // Call this function on the ranking.html page load
-fetchAndDisplayRankings();
+fetchAndDisplayRankings(); */
 
 /* // Handle Google Sign-In
 googleSignInBtn.addEventListener('click', () => {
