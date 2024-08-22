@@ -46,6 +46,16 @@ weekSelector.addEventListener('change', () => {
     fetchMatchesByWeek(selectedWeek);
 });
 
+  // Event listener for week predictions submission
+submitWeekBtn.addEventListener('click', () => {
+    const predictions = gatherWeekPredictions();
+    if (predictions.length > 0) {
+        saveWeekPredictions(predictions);
+    } else {
+        alert('Please enter predictions for the matches.');
+    }
+});
+
 // Function to fetch matches for a specific week and show user's predictions
 function fetchMatchesByWeek(week) {
     const matchesRef = ref(database, 'bundesliga_2023/matches');
@@ -145,16 +155,6 @@ function showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcome
     });
 }
 
-// Event listener for week predictions submission
-submitWeekBtn.addEventListener('click', () => {
-    const predictions = gatherWeekPredictions();
-    if (predictions.length > 0) {
-        saveWeekPredictions(predictions);
-    } else {
-        alert('Please enter predictions for the matches.');
-    }
-});
-
 // Function to gather all predictions for the week
 function gatherWeekPredictions() {
     const predictions = [];
@@ -214,7 +214,7 @@ console.log('Week Selector Value:', selectedWeek);
 console.log('Predictions Array:', predictions);
 
 // Function to save predictions and calculate points for a selected week
-function saveWeekPredictions(predictions) {
+function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek parameter
     const user = auth.currentUser;
     if (!user) {
         alert("You need to sign in to submit predictions.");
