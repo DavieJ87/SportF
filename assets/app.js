@@ -31,7 +31,6 @@ const signOutBtn = document.getElementById('sign-out-btn');
 const userInfo = document.getElementById('user-info');
 const userEmail = document.getElementById('user-email');
 const submitWeekBtn = document.getElementById('submit-week-btn');
-  });
 
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
 for (let i = 1; i <= 34; i++) {
