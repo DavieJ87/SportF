@@ -24,23 +24,20 @@ let weekSelector, matchesContainer, googleSignInBtn, signOutBtn, userInfo, userE
 
 // Get references to DOM elements
 document.addEventListener('DOMContentLoaded', () => {
-const weekSelector = document.getElementById('week');
-const matchesContainer = document.getElementById('matches-container');
-const googleSignInBtn = document.getElementById('google-sign-in-btn');
-const signOutBtn = document.getElementById('sign-out-btn');
-const userInfo = document.getElementById('user-info');
-const userEmail = document.getElementById('user-email');
-const submitWeekBtn = document.getElementById('submit-week-btn');
+    weekSelector = document.getElementById('week');
+    matchesContainer = document.getElementById('matches-container');
+    googleSignInBtn = document.getElementById('google-sign-in-btn');
+    signOutBtn = document.getElementById('sign-out-btn');
+    userInfo = document.getElementById('user-info');
+    userEmail = document.getElementById('user-email');
+    submitWeekBtn = document.getElementById('submit-week-btn');
 
-  let selectedWeek = null;
-    // Ensure matchesContainer is defined
     if (!matchesContainer) {
         console.error('Matches Container not found in the DOM.');
         return;
     }
 
-  
-if (submitWeekBtn) {
+    if (submitWeekBtn) {
         submitWeekBtn.addEventListener('click', () => {
             const predictions = gatherWeekPredictions();
             const selectedWeek = weekSelector.value; // Get the selected week value
@@ -53,8 +50,8 @@ if (submitWeekBtn) {
     } else {
         console.error('Submit Week Button not found in the DOM.');
     }
-  
-// Populate week selector with options from 1 to 34 (Bundesliga season weeks)
+
+    // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
     if (weekSelector) {
         for (let i = 1; i <= 34; i++) {
             let option = document.createElement('option');
@@ -70,26 +67,6 @@ if (submitWeekBtn) {
     } else {
         console.error('Week Selector not found in the DOM.');
     }
-// Event listener for week selector change
-weekSelector.addEventListener('change', () => {
-    const selectedWeek = weekSelector.value;
-    fetchMatchesByWeek(selectedWeek);
-});
-
-    // Event listener for week predictions submission
-    submitWeekBtn.addEventListener('click', () => {
-        if (!selectedWeek) {
-            alert('Please select a week first.');
-            return;
-        }
-
-        const predictions = gatherWeekPredictions();
-        if (predictions.length > 0) {
-            saveWeekPredictions(predictions, selectedWeek); // Pass selectedWeek
-        } else {
-            alert('Please enter predictions for the matches.');
-        }
-    });
 });
 
 // Function to fetch matches for a specific week and show user's predictions
@@ -97,7 +74,7 @@ function fetchMatchesByWeek(week) {
     const matchesRef = ref(database, 'bundesliga_2023/matches');
     onValue(matchesRef, (snapshot) => {
         const matches = snapshot.val();
-       // matchesContainer.innerHTML = ''; // Clear previous matches
+        matchesContainer.innerHTML = ''; // Clear previous matches
 
         for (let matchId in matches) {
             const match = matches[matchId];
@@ -118,7 +95,6 @@ function createMatchElement(match, matchId, week) {
 
     const date = document.createElement('p');
     date.textContent = `Date: ${new Date(match.date_time).toLocaleString()}`;
-
 
     // Prediction section
     const predictionDiv = document.createElement('div');
@@ -170,6 +146,27 @@ function createMatchElement(match, matchId, week) {
 
     matchesContainer.appendChild(matchDiv);
 }
+
+// Function to show existing predictions
+function showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcomeSelect) {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userId = user.uid;
+    const predictionRef = ref(database, `predictions/${userId}/${matchId}`);
+
+    get(predictionRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const prediction = snapshot.val();
+            homeScoreInput.value = prediction.predicted_home_score;
+            awayScoreInput.value = prediction.predicted_away_score;
+            outcomeSelect.value = prediction.predicted_outcome;
+        }
+    }).catch((error) => {
+        console.error('Error fetching prediction:', error);
+    });
+}
+
 
 // Function to show existing predictions
 function showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcomeSelect) {
