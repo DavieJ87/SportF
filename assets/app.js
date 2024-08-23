@@ -24,6 +24,17 @@ let weekSelector, matchesContainer, googleSignInBtn, signOutBtn, userInfo, userE
 
 // Get references to DOM elements
 document.addEventListener('DOMContentLoaded', () => {
+    initializeDOMElements();
+
+    if (submitWeekBtn) {
+        submitWeekBtn.addEventListener('click', handleWeekSubmit);
+    }
+
+    populateWeekSelector();
+});
+
+// Initialize DOM elements
+function initializeDOMElements() {
     weekSelector = document.getElementById('week');
     matchesContainer = document.getElementById('matches-container');
     googleSignInBtn = document.getElementById('google-sign-in-btn');
@@ -31,30 +42,24 @@ document.addEventListener('DOMContentLoaded', () => {
     userInfo = document.getElementById('user-info');
     userEmail = document.getElementById('user-email');
     submitWeekBtn = document.getElementById('submit-week-btn');
+}
 
-    if (!matchesContainer) {
-        console.error('Matches Container not found in the DOM.');
-        return;
-    }
-
-    if (submitWeekBtn) {
-        submitWeekBtn.addEventListener('click', () => {
-            const predictions = gatherWeekPredictions();
-            const selectedWeek = weekSelector.value; // Get the selected week value
-            if (predictions.length > 0) {
-                saveWeekPredictions(predictions, selectedWeek);
-            } else {
-                alert('Please enter predictions for the matches.');
-            }
-        });
+// Handle week submit button click
+function handleWeekSubmit() {
+    const predictions = gatherWeekPredictions();
+    const selectedWeek = weekSelector.value;
+    if (predictions.length > 0) {
+        saveWeekPredictions(predictions, selectedWeek);
     } else {
-        console.error('Submit Week Button not found in the DOM.');
+        alert('Please enter predictions for the matches.');
     }
+}
 
-    // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
+// Populate week selector with options from 1 to 34 (Bundesliga season weeks)
+function populateWeekSelector() {
     if (weekSelector) {
         for (let i = 1; i <= 34; i++) {
-            let option = document.createElement('option');
+            const option = document.createElement('option');
             option.value = i;
             option.text = `Week ${i}`;
             weekSelector.appendChild(option);
@@ -64,29 +69,27 @@ document.addEventListener('DOMContentLoaded', () => {
             const selectedWeek = weekSelector.value;
             fetchMatchesByWeek(selectedWeek);
         });
-    } else {
-        console.error('Week Selector not found in the DOM.');
     }
-});
+}
 
-// Function to fetch matches for a specific week and show user's predictions
+// Fetch matches for a specific week and display them
 function fetchMatchesByWeek(week) {
     const matchesRef = ref(database, 'bundesliga_2023/matches');
     onValue(matchesRef, (snapshot) => {
         const matches = snapshot.val();
-        matchesContainer.innerHTML = ''; // Clear previous matches
+        matchesContainer.innerHTML = '';
 
-        for (let matchId in matches) {
+        Object.keys(matches).forEach((matchId) => {
             const match = matches[matchId];
             if (match.week_number == week) {
-                createMatchElement(match, matchId, week);
+                createMatchElement(match, matchId);
             }
-        }
+        });
     });
 }
 
-// Function to create a match element and show existing predictions
-function createMatchElement(match, matchId, week) {
+// Create a match element and display existing predictions
+function createMatchElement(match, matchId) {
     const matchDiv = document.createElement('div');
     matchDiv.className = 'match';
 
@@ -96,59 +99,61 @@ function createMatchElement(match, matchId, week) {
     const date = document.createElement('p');
     date.textContent = `Date: ${new Date(match.date_time).toLocaleString()}`;
 
-    // Prediction section
-    const predictionDiv = document.createElement('div');
-    predictionDiv.className = 'prediction';
-
-    const homeScoreInput = document.createElement('input');
-    homeScoreInput.type = 'number';
-    homeScoreInput.className = 'home-score';
-    homeScoreInput.placeholder = 'Home Score';
-    homeScoreInput.dataset.matchId = matchId;
-
-    const awayScoreInput = document.createElement('input');
-    awayScoreInput.type = 'number';
-    awayScoreInput.className = 'away-score';
-    awayScoreInput.placeholder = 'Away Score';
-    awayScoreInput.dataset.matchId = matchId;
-
-    const outcomeSelect = document.createElement('select');
-    outcomeSelect.className = 'outcome-select';
-    outcomeSelect.dataset.matchId = matchId;
-
-    const homeOption = document.createElement('option');
-    homeOption.value = 'home';
-    homeOption.textContent = 'Home Win';
-
-    const awayOption = document.createElement('option');
-    awayOption.value = 'away';
-    awayOption.textContent = 'Away Win';
-
-    const drawOption = document.createElement('option');
-    drawOption.value = 'draw';
-    drawOption.textContent = 'Draw';
-
-    outcomeSelect.appendChild(homeOption);
-    outcomeSelect.appendChild(awayOption);
-    outcomeSelect.appendChild(drawOption);
-
-    // Append inputs to predictionDiv
-    predictionDiv.appendChild(homeScoreInput);
-    predictionDiv.appendChild(awayScoreInput);
-    predictionDiv.appendChild(outcomeSelect);
+    const predictionDiv = createPredictionElement(matchId);
 
     matchDiv.appendChild(title);
     matchDiv.appendChild(date);
     matchDiv.appendChild(predictionDiv);
 
-    // Show user's existing predictions
-    showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcomeSelect);
+    showExistingPrediction(matchId, predictionDiv);
 
     matchesContainer.appendChild(matchDiv);
 }
 
-// Function to show existing predictions
-function showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcomeSelect) {
+// Create prediction element for match
+function createPredictionElement(matchId) {
+    const predictionDiv = document.createElement('div');
+    predictionDiv.className = 'prediction';
+
+    const homeScoreInput = createInputElement('home-score', matchId, 'Home Score');
+    const awayScoreInput = createInputElement('away-score', matchId, 'Away Score');
+    const outcomeSelect = createOutcomeSelectElement(matchId);
+
+    predictionDiv.appendChild(homeScoreInput);
+    predictionDiv.appendChild(awayScoreInput);
+    predictionDiv.appendChild(outcomeSelect);
+
+    return predictionDiv;
+}
+
+// Create an input element
+function createInputElement(className, matchId, placeholder) {
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = className;
+    input.placeholder = placeholder;
+    input.dataset.matchId = matchId;
+    return input;
+}
+
+// Create an outcome select element
+function createOutcomeSelectElement(matchId) {
+    const outcomeSelect = document.createElement('select');
+    outcomeSelect.className = 'outcome-select';
+    outcomeSelect.dataset.matchId = matchId;
+
+    ['Home Win', 'Away Win', 'Draw'].forEach((outcome, index) => {
+        const option = document.createElement('option');
+        option.value = outcome.toLowerCase().replace(' ', '');
+        option.textContent = outcome;
+        outcomeSelect.appendChild(option);
+    });
+
+    return outcomeSelect;
+}
+
+// Show existing predictions
+function showExistingPrediction(matchId, predictionDiv) {
     const user = auth.currentUser;
     if (!user) return;
 
@@ -158,37 +163,16 @@ function showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcome
     get(predictionRef).then((snapshot) => {
         if (snapshot.exists()) {
             const prediction = snapshot.val();
-            homeScoreInput.value = prediction.predicted_home_score;
-            awayScoreInput.value = prediction.predicted_away_score;
-            outcomeSelect.value = prediction.predicted_outcome;
+            predictionDiv.querySelector('.home-score').value = prediction.predicted_home_score;
+            predictionDiv.querySelector('.away-score').value = prediction.predicted_away_score;
+            predictionDiv.querySelector('.outcome-select').value = prediction.predicted_outcome;
         }
     }).catch((error) => {
         console.error('Error fetching prediction:', error);
     });
 }
 
-
-// Function to show existing predictions
-function showExistingPrediction(matchId, homeScoreInput, awayScoreInput, outcomeSelect) {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const userId = user.uid;
-    const predictionRef = ref(database, `predictions/${userId}/${matchId}`);
-
-    get(predictionRef).then((snapshot) => {
-        if (snapshot.exists()) {
-            const prediction = snapshot.val();
-            homeScoreInput.value = prediction.predicted_home_score;
-            awayScoreInput.value = prediction.predicted_away_score;
-            outcomeSelect.value = prediction.predicted_outcome;
-        }
-    }).catch((error) => {
-        console.error('Error fetching prediction:', error);
-    });
-}
-
-// Function to gather all predictions for the week
+// Gather all predictions for the week
 function gatherWeekPredictions() {
     const predictions = [];
     const predictionDivs = matchesContainer.querySelectorAll('.prediction');
@@ -216,6 +200,7 @@ function gatherWeekPredictions() {
     return predictions;
 }
 
+// Calculate points based on predictions
 function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, predictedAwayScore, predictedOutcome) {
     let points = 0;
 
@@ -233,21 +218,8 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
     return points;
 }
 
-/* submitWeekBtn.addEventListener('click', () => {
-    const predictions = gatherWeekPredictions();
-    const selectedWeek = weekSelector.value; // Get the selected week value
-    if (predictions.length > 0) {
-        saveWeekPredictions(predictions, selectedWeek);
-    } else {
-        alert('Please enter predictions for the matches.');
-    }
-}); */
-
-// console.log('Week Selector Value:', selectedWeek);
-// console.log('Predictions Array:', predictions);
-
-// Function to save predictions and calculate points for a selected week
-function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek parameter
+// Save predictions and calculate points
+function saveWeekPredictions(predictions, selectedWeek) {
     const user = auth.currentUser;
     if (!user) {
         alert("You need to sign in to submit predictions.");
@@ -267,7 +239,6 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
                 const actualHomeScore = matchData.home_team_score;
                 const actualAwayScore = matchData.away_team_score;
 
-                // Calculate points based on the prediction and actual match results
                 const points = calculatePoints(
                     actualHomeScore,
                     actualAwayScore,
@@ -278,181 +249,89 @@ function saveWeekPredictions(predictions, selectedWeek) {  // Add selectedWeek p
 
                 weekTotalPoints += points;
 
-                // Prepare the update object for this specific prediction
                 updates[`predictions/${userId}/${selectedWeek}/${prediction.matchId}`] = {
                     predicted_home_score: prediction.predicted_home_score,
                     predicted_away_score: prediction.predicted_away_score,
                     predicted_outcome: prediction.predicted_outcome,
-                    points: points // Store points for the prediction
+                    points: points
                 };
             }
         }).catch(error => {
             console.error('Error fetching match data:', error);
-     });      
+        });
     });
 
-    // After processing all predictions, update the user's weekly and total points
+    // Update user's weekly and total points
     Promise.all(predictionPromises).then(() => {
-        // Store the total points for the week
-        // const weekPointsRef = ref(database, `users/${userId}/weekly_points/${selectedWeek}`);
         updates[`users/${userId}/weekly_points/${selectedWeek}`] = weekTotalPoints;
 
-        // Update the user's total points
-        const userPointsRef = ref(database, `users/${userId}/total_points`);
-        get(userPointsRef).then(userSnapshot => {
-            let currentPoints = userSnapshot.exists() ? userSnapshot.val() : 0;
-            currentPoints += weekTotalPoints;
+        get(ref(database, `users/${userId}/total_points`)).then(snapshot => {
+            let totalPoints = snapshot.exists() ? snapshot.val() : 0;
+            totalPoints += weekTotalPoints;
+            updates[`users/${userId}/total_points`] = totalPoints;
 
-             set(userPointsRef, currentPoints).then(() => {
-                alert('Week predictions saved successfully!');
-            updates[`users/${userId}/total_points`] = currentPoints;
-
-            // Execute the update operation
             update(ref(database), updates).then(() => {
-                alert('Week predictions saved successfully!');
-                console.log('Predictions and points successfully saved:', updates);  // Debugging log
+                alert('Predictions submitted successfully!');
             }).catch(error => {
-                console.error('Error saving predictions and points:', error);
+                console.error('Error updating predictions:', error);
             });
         }).catch(error => {
-            console.error('Error fetching user points:', error);
+            console.error('Error fetching total points:', error);
         });
     }).catch(error => {
-        console.error('Error processing predictions:', error);
-    });
-          
-
+        console.error('Error saving predictions:', error);
     });
 }
 
-function fetchLastFivePredictions() {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const userId = user.uid;
-    const predictionsRef = ref(database, `predictions/${userId}`);
-
-    get(predictionsRef).then((snapshot) => {
-        if (snapshot.exists()) {
-            const predictions = snapshot.val();
-            const predictionsArray = Object.entries(predictions).map(([key, value]) => ({ matchId: key, ...value }));
-            
-            // Sort predictions by match ID or timestamp (if available)
-            predictionsArray.sort((a, b) => b.matchId - a.matchId);
-
-            // Get the last 5 predictions
-            const lastFive = predictionsArray.slice(0, 5);
-            const lastPredictionsList = document.getElementById('last-predictions-list');
-            lastPredictionsList.innerHTML = ''; // Clear existing list
-
-            lastFive.forEach(prediction => {
-                const li = document.createElement('li');
-                li.textContent = `Match ID: ${prediction.matchId}, Home Score: ${prediction.predicted_home_score}, Away Score: ${prediction.predicted_away_score}, Outcome: ${prediction.predicted_outcome}, Points: ${prediction.points}`;
-                lastPredictionsList.appendChild(li);
-            });
-        }
-    }).catch((error) => {
-        console.error('Error fetching predictions:', error);
-    });
-}
-
-// Call this function on profile.html page load
-fetchLastFivePredictions();
-
-
-/* function fetchAndDisplayRankings() {
-    const usersRef = ref(database, 'users');
-    const rankingTableBody = document.getElementById('ranking-table').getElementsByTagName('tbody')[0];
-
-    get(usersRef).then((snapshot) => {
-        if (snapshot.exists()) {
-            const usersData = snapshot.val();
-            const usersArray = [];
-
-            // Prepare the users array
-            for (let userId in usersData) {
-                const userData = usersData[userId];
-                usersArray.push({
-                    userId: userId,
-                    displayName: userData.displayName,
-                    totalPoints: userData.total_points || 0
-                });
-            }
-
-            // Sort users by total points in descending order
-            usersArray.sort((a, b) => b.totalPoints - a.totalPoints);
-
-            // Populate the ranking table
-            rankingTableBody.innerHTML = '';
-            usersArray.forEach((user, index) => {
-                const row = rankingTableBody.insertRow();
-                const rankCell = row.insertCell(0);
-                const nameCell = row.insertCell(1);
-                const pointsCell = row.insertCell(2);
-
-                rankCell.textContent = index + 1;
-                nameCell.textContent = user.displayName;
-                pointsCell.textContent = user.totalPoints;
-            });
-        }
-    }).catch((error) => {
-        console.error('Error fetching user rankings:', error);
-    });
-}
-
-// Call this function on the ranking.html page load
-fetchAndDisplayRankings(); */
-
-/* // Handle Google Sign-In
-googleSignInBtn.addEventListener('click', () => {
+// Sign in with Google
+function signInWithGoogle() {
     const provider = new GoogleAuthProvider();
+
     signInWithPopup(auth, provider)
-        .then((result) => {
+        .then(result => {
             const user = result.user;
-            // You can access the user's information here
-            userInfo.textContent = `Hello, ${user.displayName}`;
-            userEmail.textContent = `Email: ${user.email}`;
+            userInfo.style.display = 'block';
+            userEmail.textContent = user.email;
             googleSignInBtn.style.display = 'none';
             signOutBtn.style.display = 'block';
-            document.getElementById('main-content').style.display = 'block';
         })
-        .catch((error) => {
-            console.error('Error during sign-in:', error);
+        .catch(error => {
+            console.error('Google sign-in error:', error);
         });
-});
+}
 
-// Handle Sign-Out
-signOutBtn.addEventListener('click', () => {
-    signOut(auth).then(() => {
-        userInfo.textContent = '';
-        userEmail.textContent = '';
-        googleSignInBtn.style.display = 'block';
-        signOutBtn.style.display = 'none';
-        document.getElementById('main-content').style.display = 'none';
-    }).catch((error) => {
-        console.error('Error during sign-out:', error);
-    });
-});
+// Sign out
+function signOutUser() {
+    signOut(auth)
+        .then(() => {
+            userInfo.style.display = 'none';
+            googleSignInBtn.style.display = 'block';
+            signOutBtn.style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Sign-out error:', error);
+        });
+}
 
-// Listen for auth state changes
-onAuthStateChanged(auth, (user) => {
+// Authentication state observer
+onAuthStateChanged(auth, user => {
     if (user) {
-        // User is signed in
-        userInfo.textContent = `Hello, ${user.displayName}`;
-        userEmail.textContent = `Email: ${user.email}`;
+        userInfo.style.display = 'block';
+        userEmail.textContent = user.email;
         googleSignInBtn.style.display = 'none';
         signOutBtn.style.display = 'block';
-        document.getElementById('main-content').style.display = 'block';
     } else {
-        // User is signed out
-        userInfo.textContent = '';
-        userEmail.textContent = '';
+        userInfo.style.display = 'none';
         googleSignInBtn.style.display = 'block';
         signOutBtn.style.display = 'none';
-        document.getElementById('main-content').style.display = 'none';
     }
-}); */
+});
 
-// Fetch matches for the first week by default
-fetchMatchesByWeek(1);
+// Event listeners for sign-in and sign-out buttons
+if (googleSignInBtn) {
+    googleSignInBtn.addEventListener('click', signInWithGoogle);
+}
 
+if (signOutBtn) {
+    signOutBtn.addEventListener('click', signOutUser);
+}
