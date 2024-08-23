@@ -1,6 +1,7 @@
 // Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
 // Firebase configuration
 const firebaseConfig = {
@@ -16,13 +17,14 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
-// Declare variables to hold DOM elements
-let weekSelector, matchesContainer, submitWeekBtn;
+let weekSelector, matchesContainer, submitWeekBtn, currentUserId;
 
-// Get references to DOM elements
 document.addEventListener('DOMContentLoaded', () => {
     initializeDOMElements();
+    authenticateUserWithGoogle();
 
     if (submitWeekBtn) {
         submitWeekBtn.addEventListener('click', handleWeekSubmit);
@@ -36,6 +38,27 @@ function initializeDOMElements() {
     weekSelector = document.getElementById('week');
     matchesContainer = document.getElementById('matches-container');
     submitWeekBtn = document.getElementById('submit-week-btn');
+}
+
+// Authenticate user with Google SSO
+function authenticateUserWithGoogle() {
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUserId = user.uid; // The authenticated user's UID
+            console.log(`User ${user.displayName} is signed in with UID: ${currentUserId}`);
+        } else {
+            // If no user is signed in, initiate Google SSO
+            signInWithPopup(auth, provider)
+                .then((result) => {
+                    const user = result.user;
+                    currentUserId = user.uid;
+                    console.log(`User ${user.displayName} signed in with UID: ${currentUserId}`);
+                })
+                .catch((error) => {
+                    console.error('Error during sign-in:', error);
+                });
+        }
+    });
 }
 
 // Handle week submit button click
@@ -117,12 +140,15 @@ function createPredictionElement(matchId, matchDateTime) {
     predictionDiv.appendChild(awayScoreInput);
     predictionDiv.appendChild(outcomeSelect);
 
+    // Commenting out the disabling logic for testing phase
+    /*
     // Disable inputs if the match date has passed
     if (new Date(matchDateTime) < new Date()) {
         homeScoreInput.disabled = true;
         awayScoreInput.disabled = true;
         outcomeSelect.disabled = true;
     }
+    */
 
     return predictionDiv;
 }
@@ -155,8 +181,7 @@ function createOutcomeSelectElement(matchId) {
 
 // Show existing predictions
 function showExistingPrediction(matchId, selectedWeek, predictionDiv, matchDateTime) {
-    const userId = "user123";  // Replace with your user identification logic
-    const predictionRef = ref(database, `predictions/${userId}/${selectedWeek}/${matchId}`);
+    const predictionRef = ref(database, `predictions/${currentUserId}/${selectedWeek}/${matchId}`);
 
     get(predictionRef).then((snapshot) => {
         if (snapshot.exists()) {
@@ -165,12 +190,15 @@ function showExistingPrediction(matchId, selectedWeek, predictionDiv, matchDateT
             predictionDiv.querySelector('.away-score').value = prediction.predicted_away_score;
             predictionDiv.querySelector('.outcome-select').value = prediction.predicted_outcome;
 
+            // Commenting out the disabling logic for testing phase
+            /*
             // If match date has passed, disable inputs to prevent modification
             if (new Date(matchDateTime) < new Date()) {
                 predictionDiv.querySelector('.home-score').disabled = true;
                 predictionDiv.querySelector('.away-score').disabled = true;
                 predictionDiv.querySelector('.outcome-select').disabled = true;
             }
+            */
         }
     }).catch((error) => {
         console.error('Error fetching prediction:', error);
@@ -223,24 +251,20 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
     return points;
 }
 
-// Save predictions and calculate points
+// Save predictions to Firebase
 function saveWeekPredictions(predictions, selectedWeek) {
-    const userId = "user123";  // Replace with your user identification logic
     const updates = {};
     let weekTotalPoints = 0;
 
-    const predictionPromises = predictions.map(prediction => {
+    predictions.forEach(prediction => {
         const matchRef = ref(database, `bundesliga_2023/matches/${prediction.matchId}`);
-
-        return get(matchRef).then(snapshot => {
+        
+        get(matchRef).then(snapshot => {
             if (snapshot.exists()) {
-                const matchData = snapshot.val();
-                const actualHomeScore = matchData.home_team_score;
-                const actualAwayScore = matchData.away_team_score;
-
+                const match = snapshot.val();
                 const points = calculatePoints(
-                    actualHomeScore,
-                    actualAwayScore,
+                    match.home_score,
+                    match.away_score,
                     prediction.predicted_home_score,
                     prediction.predicted_away_score,
                     prediction.predicted_outcome
@@ -248,23 +272,23 @@ function saveWeekPredictions(predictions, selectedWeek) {
 
                 weekTotalPoints += points;
 
-                updates[`predictions/${userId}/${selectedWeek}/${prediction.matchId}`] = {
+                updates[`predictions/${currentUserId}/${selectedWeek}/${prediction.matchId}`] = {
                     predicted_home_score: prediction.predicted_home_score,
                     predicted_away_score: prediction.predicted_away_score,
                     predicted_outcome: prediction.predicted_outcome,
                     points: points
                 };
             }
+        }).catch(error => {
+            console.error('Error fetching match data:', error);
         });
     });
 
-    Promise.all(predictionPromises).then(() => {
-        updates[`user_points/${userId}/week_${selectedWeek}_points`] = weekTotalPoints;
-        update(ref(database), updates).then(() => {
-            alert('Predictions saved successfully!');
-        }).catch(error => {
-            console.error('Error saving predictions:', error);
-        });
+    // Update user points
+    updates[`user_points/${currentUserId}/week_${selectedWeek}_points`] = weekTotalPoints;
+
+    update(ref(database), updates).then(() => {
+        alert('Predictions saved successfully!');
     }).catch(error => {
         console.error('Error saving predictions:', error);
     });
