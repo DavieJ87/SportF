@@ -247,8 +247,21 @@ function gatherWeekPredictions() {
 function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, predictedAwayScore, predictedOutcome) {
     let points = 0;
 
+    // If scores or outcome are missing, return 0 points
+    if (actualHomeScore == null || actualAwayScore == null) {
+        console.log('Actual scores are missing, returning 0 points.');
+        return points;
+    }
+
+    console.log(`Calculating points...`);
+    console.log(`Actual scores: Home - ${actualHomeScore}, Away - ${actualAwayScore}`);
+    console.log(`Predicted scores: Home - ${predictedHomeScore}, Away - ${predictedAwayScore}`);
+    console.log(`Predicted outcome: ${predictedOutcome}`);
+
     const actualOutcome = actualHomeScore > actualAwayScore ? 'homewin' :
                           actualHomeScore < actualAwayScore ? 'awaywin' : 'draw';
+
+    console.log(`Actual outcome: ${actualOutcome}`);
 
     if (actualOutcome === predictedOutcome) {
         points += 1;
@@ -258,6 +271,7 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
         points += 3;
     }
 
+    console.log(`Points awarded: ${points}`);
     return points;
 }
 
@@ -289,6 +303,8 @@ function saveWeekPredictions(predictions, selectedWeek) {
                     predicted_outcome: prediction.predicted_outcome,
                     points: points
                 };
+            } else {
+                console.log(`Match data for match ID ${prediction.matchId} does not exist.`);
             }
 
             processedPredictions++;
