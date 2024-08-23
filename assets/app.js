@@ -247,8 +247,8 @@ function gatherWeekPredictions() {
 function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, predictedAwayScore, predictedOutcome) {
     let points = 0;
 
-    const actualOutcome = actualHomeScore > actualAwayScore ? 'home' :
-                          actualHomeScore < actualAwayScore ? 'away' : 'draw';
+    const actualOutcome = actualHomeScore > actualAwayScore ? 'homewin' :
+                          actualHomeScore < actualAwayScore ? 'awaywin' : 'draw';
 
     if (actualOutcome === predictedOutcome) {
         points += 1;
@@ -265,6 +265,7 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
 function saveWeekPredictions(predictions, selectedWeek) {
     const updates = {};
     let weekTotalPoints = 0;
+    let processedPredictions = 0;
 
     predictions.forEach(prediction => {
         const matchRef = ref(database, `bundesliga_2023/matches/${prediction.matchId}`);
@@ -289,17 +290,22 @@ function saveWeekPredictions(predictions, selectedWeek) {
                     points: points
                 };
             }
+
+            processedPredictions++;
+
+            // If all predictions have been processed, update the database
+            if (processedPredictions === predictions.length) {
+                // Update user points
+                updates[`user_points/${currentUserId}/week_${selectedWeek}_points`] = weekTotalPoints;
+
+                update(ref(database), updates).then(() => {
+                    alert('Predictions saved successfully!');
+                }).catch(error => {
+                    console.error('Error saving predictions:', error);
+                });
+            }
         }).catch(error => {
             console.error('Error fetching match data:', error);
         });
-    });
-
-    // Update user points
-    updates[`user_points/${currentUserId}/week_${selectedWeek}_points`] = weekTotalPoints;
-
-    update(ref(database), updates).then(() => {
-        alert('Predictions saved successfully!');
-    }).catch(error => {
-        console.error('Error saving predictions:', error);
     });
 }
