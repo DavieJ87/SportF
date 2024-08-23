@@ -283,13 +283,13 @@ function saveWeekPredictions(predictions, selectedWeek) {
 
     predictions.forEach(prediction => {
         const matchRef = ref(database, `bundesliga_2023/matches/${prediction.matchId}`);
-        
+
         get(matchRef).then(snapshot => {
             if (snapshot.exists()) {
                 const match = snapshot.val();
                 const points = calculatePoints(
-                    match.home_score,
-                    match.away_score,
+                    match.home_team_score, // Corrected key
+                    match.away_team_score, // Corrected key
                     prediction.predicted_home_score,
                     prediction.predicted_away_score,
                     prediction.predicted_outcome
