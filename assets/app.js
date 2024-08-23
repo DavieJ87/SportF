@@ -75,6 +75,12 @@ function handleWeekSubmit() {
 // Populate week selector with options from 1 to 34 (Bundesliga season weeks)
 function populateWeekSelector() {
     if (weekSelector) {
+        // Initial option to prompt user selection
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.text = 'Select a Week';
+        weekSelector.appendChild(defaultOption);
+
         for (let i = 1; i <= 34; i++) {
             const option = document.createElement('option');
             option.value = i;
@@ -84,7 +90,11 @@ function populateWeekSelector() {
 
         weekSelector.addEventListener('change', () => {
             const selectedWeek = weekSelector.value;
-            fetchMatchesByWeek(selectedWeek);
+            if (selectedWeek) {
+                fetchMatchesByWeek(selectedWeek);
+            } else {
+                matchesContainer.innerHTML = ''; // Clear matches container if no week is selected
+            }
         });
     }
 }
@@ -241,17 +251,17 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
                           actualHomeScore < actualAwayScore ? 'away' : 'draw';
 
     if (actualOutcome === predictedOutcome) {
-        points += 1; // 1 point for the correct outcome
+        points += 1;
     }
 
     if (actualHomeScore === predictedHomeScore && actualAwayScore === predictedAwayScore) {
-        points += 3; // 3 points for the exact score
+        points += 3;
     }
 
     return points;
 }
 
-// Save predictions to Firebase
+// Save week predictions to the database
 function saveWeekPredictions(predictions, selectedWeek) {
     const updates = {};
     let weekTotalPoints = 0;
