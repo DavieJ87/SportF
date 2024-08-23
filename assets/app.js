@@ -264,7 +264,7 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
 // Save week predictions to the database
 function saveWeekPredictions(predictions, selectedWeek) {
     const updates = {};
-    // let weekTotalPoints = 0;
+    let weekTotalPoints = 0;
     let processedPredictions = 0;
 
     predictions.forEach(prediction => {
