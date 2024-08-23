@@ -1,26 +1,24 @@
 // Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
-  authDomain: "sportf-8c772.firebaseapp.com",
-  databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
-  projectId: "sportf-8c772",
-  storageBucket: "sportf-8c772.appspot.com",
-  messagingSenderId: "523775447476",
-  appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
+    apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
+    authDomain: "sportf-8c772.firebaseapp.com",
+    databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
+    projectId: "sportf-8c772",
+    storageBucket: "sportf-8c772.appspot.com",
+    messagingSenderId: "523775447476",
+    appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
 };
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const database = getDatabase(app);
 
 // Declare variables to hold DOM elements
-let weekSelector, matchesContainer, googleSignInBtn, signOutBtn, userInfo, userEmail, submitWeekBtn;
+let weekSelector, matchesContainer, submitWeekBtn;
 
 // Get references to DOM elements
 document.addEventListener('DOMContentLoaded', () => {
@@ -37,10 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function initializeDOMElements() {
     weekSelector = document.getElementById('week');
     matchesContainer = document.getElementById('matches-container');
-    googleSignInBtn = document.getElementById('google-sign-in-btn');
-    signOutBtn = document.getElementById('sign-out-btn');
-    userInfo = document.getElementById('user-info');
-    userEmail = document.getElementById('user-email');
     submitWeekBtn = document.getElementById('submit-week-btn');
 }
 
@@ -82,14 +76,14 @@ function fetchMatchesByWeek(week) {
         Object.keys(matches).forEach((matchId) => {
             const match = matches[matchId];
             if (match.week_number == week) {
-                createMatchElement(match, matchId);
+                createMatchElement(match, matchId, week);
             }
         });
     });
 }
 
 // Create a match element and display existing predictions
-function createMatchElement(match, matchId) {
+function createMatchElement(match, matchId, selectedWeek) {
     const matchDiv = document.createElement('div');
     matchDiv.className = 'match';
 
@@ -105,7 +99,7 @@ function createMatchElement(match, matchId) {
     matchDiv.appendChild(date);
     matchDiv.appendChild(predictionDiv);
 
-    showExistingPrediction(matchId, predictionDiv);
+    showExistingPrediction(matchId, selectedWeek, predictionDiv);
 
     matchesContainer.appendChild(matchDiv);
 }
@@ -142,7 +136,7 @@ function createOutcomeSelectElement(matchId) {
     outcomeSelect.className = 'outcome-select';
     outcomeSelect.dataset.matchId = matchId;
 
-    ['Home Win', 'Away Win', 'Draw'].forEach((outcome, index) => {
+    ['Home Win', 'Away Win', 'Draw'].forEach((outcome) => {
         const option = document.createElement('option');
         option.value = outcome.toLowerCase().replace(' ', '');
         option.textContent = outcome;
@@ -153,12 +147,9 @@ function createOutcomeSelectElement(matchId) {
 }
 
 // Show existing predictions
-function showExistingPrediction(matchId, predictionDiv) {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const userId = user.uid;
-    const predictionRef = ref(database, `predictions/${userId}/${matchId}`);
+function showExistingPrediction(matchId, selectedWeek, predictionDiv) {
+    const userId = "user123";  // Replace with your user identification logic
+    const predictionRef = ref(database, `predictions/${userId}/${selectedWeek}/${matchId}`);
 
     get(predictionRef).then((snapshot) => {
         if (snapshot.exists()) {
@@ -220,13 +211,7 @@ function calculatePoints(actualHomeScore, actualAwayScore, predictedHomeScore, p
 
 // Save predictions and calculate points
 function saveWeekPredictions(predictions, selectedWeek) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("You need to sign in to submit predictions.");
-        return;
-    }
-
-    const userId = user.uid;
+    const userId = "user123";  // Replace with your user identification logic
     const updates = {};
     let weekTotalPoints = 0;
 
@@ -281,57 +266,4 @@ function saveWeekPredictions(predictions, selectedWeek) {
     }).catch(error => {
         console.error('Error saving predictions:', error);
     });
-}
-
-// Sign in with Google
-function signInWithGoogle() {
-    const provider = new GoogleAuthProvider();
-
-    signInWithPopup(auth, provider)
-        .then(result => {
-            const user = result.user;
-            userInfo.style.display = 'block';
-            userEmail.textContent = user.email;
-            googleSignInBtn.style.display = 'none';
-            signOutBtn.style.display = 'block';
-        })
-        .catch(error => {
-            console.error('Google sign-in error:', error);
-        });
-}
-
-// Sign out
-function signOutUser() {
-    signOut(auth)
-        .then(() => {
-            userInfo.style.display = 'none';
-            googleSignInBtn.style.display = 'block';
-            signOutBtn.style.display = 'none';
-        })
-        .catch(error => {
-            console.error('Sign-out error:', error);
-        });
-}
-
-// Authentication state observer
-onAuthStateChanged(auth, user => {
-    if (user) {
-        userInfo.style.display = 'block';
-        userEmail.textContent = user.email;
-        googleSignInBtn.style.display = 'none';
-        signOutBtn.style.display = 'block';
-    } else {
-        userInfo.style.display = 'none';
-        googleSignInBtn.style.display = 'block';
-        signOutBtn.style.display = 'none';
-    }
-});
-
-// Event listeners for sign-in and sign-out buttons
-if (googleSignInBtn) {
-    googleSignInBtn.addEventListener('click', signInWithGoogle);
-}
-
-if (signOutBtn) {
-    signOutBtn.addEventListener('click', signOutUser);
 }
