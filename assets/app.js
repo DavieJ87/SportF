@@ -93,19 +93,19 @@ function createMatchElement(match, matchId, selectedWeek) {
     const date = document.createElement('p');
     date.textContent = `Date: ${new Date(match.date_time).toLocaleString()}`;
 
-    const predictionDiv = createPredictionElement(matchId);
+    const predictionDiv = createPredictionElement(matchId, match.date_time);
 
     matchDiv.appendChild(title);
     matchDiv.appendChild(date);
     matchDiv.appendChild(predictionDiv);
 
-    showExistingPrediction(matchId, selectedWeek, predictionDiv);
+    showExistingPrediction(matchId, selectedWeek, predictionDiv, match.date_time);
 
     matchesContainer.appendChild(matchDiv);
 }
 
 // Create prediction element for match
-function createPredictionElement(matchId) {
+function createPredictionElement(matchId, matchDateTime) {
     const predictionDiv = document.createElement('div');
     predictionDiv.className = 'prediction';
 
@@ -116,6 +116,13 @@ function createPredictionElement(matchId) {
     predictionDiv.appendChild(homeScoreInput);
     predictionDiv.appendChild(awayScoreInput);
     predictionDiv.appendChild(outcomeSelect);
+
+    // Disable inputs if the match date has passed
+    if (new Date(matchDateTime) < new Date()) {
+        homeScoreInput.disabled = true;
+        awayScoreInput.disabled = true;
+        outcomeSelect.disabled = true;
+    }
 
     return predictionDiv;
 }
@@ -147,7 +154,7 @@ function createOutcomeSelectElement(matchId) {
 }
 
 // Show existing predictions
-function showExistingPrediction(matchId, selectedWeek, predictionDiv) {
+function showExistingPrediction(matchId, selectedWeek, predictionDiv, matchDateTime) {
     const userId = "user123";  // Replace with your user identification logic
     const predictionRef = ref(database, `predictions/${userId}/${selectedWeek}/${matchId}`);
 
@@ -157,6 +164,13 @@ function showExistingPrediction(matchId, selectedWeek, predictionDiv) {
             predictionDiv.querySelector('.home-score').value = prediction.predicted_home_score;
             predictionDiv.querySelector('.away-score').value = prediction.predicted_away_score;
             predictionDiv.querySelector('.outcome-select').value = prediction.predicted_outcome;
+
+            // If match date has passed, disable inputs to prevent modification
+            if (new Date(matchDateTime) < new Date()) {
+                predictionDiv.querySelector('.home-score').disabled = true;
+                predictionDiv.querySelector('.away-score').disabled = true;
+                predictionDiv.querySelector('.outcome-select').disabled = true;
+            }
         }
     }).catch((error) => {
         console.error('Error fetching prediction:', error);
@@ -241,27 +255,15 @@ function saveWeekPredictions(predictions, selectedWeek) {
                     points: points
                 };
             }
-        }).catch(error => {
-            console.error('Error fetching match data:', error);
         });
     });
 
-    // Update user's weekly and total points
     Promise.all(predictionPromises).then(() => {
-        updates[`users/${userId}/weekly_points/${selectedWeek}`] = weekTotalPoints;
-
-        get(ref(database, `users/${userId}/total_points`)).then(snapshot => {
-            let totalPoints = snapshot.exists() ? snapshot.val() : 0;
-            totalPoints += weekTotalPoints;
-            updates[`users/${userId}/total_points`] = totalPoints;
-
-            update(ref(database), updates).then(() => {
-                alert('Predictions submitted successfully!');
-            }).catch(error => {
-                console.error('Error updating predictions:', error);
-            });
+        updates[`user_points/${userId}/week_${selectedWeek}_points`] = weekTotalPoints;
+        update(ref(database), updates).then(() => {
+            alert('Predictions saved successfully!');
         }).catch(error => {
-            console.error('Error fetching total points:', error);
+            console.error('Error saving predictions:', error);
         });
     }).catch(error => {
         console.error('Error saving predictions:', error);
