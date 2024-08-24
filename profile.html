@@ -1,17 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
-    <script type="module" src="assets/profile.js"></script>
+    <!-- Include Firebase SDKs -->
+    <script type="module" src="profile.js"></script>
+    <style>
+        /* Basic styling for better readability */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        #user-info, #total-points, #last-predictions {
+            margin-bottom: 30px;
+        }
+        .prediction, .season-points {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .prediction p, .season-points p {
+            margin: 5px 0;
+        }
+    </style>
 </head>
 <body>
     <h1>User Profile</h1>
-    <p id="user-points">Total Points: 0</p>
-    <h2>Last 5 Predictions</h2>
-    <ul id="prediction-list"></ul>
-    <a href="home.html">Go to Predictions</a>
-    <a href="ranking.html">View Ranking</a>
+
+    <!-- User Information -->
+    <div id="user-info">
+        <p id="user-name">Name: </p>
+        <p id="user-email">Email: </p>
+    </div>
+
+    <!-- Total Points by Season -->
+    <h2>Total Points by Season</h2>
+    <div id="total-points">
+        <!-- Points will be dynamically inserted here -->
+    </div>
+
+    <!-- Last Five Predictions -->
+    <h2>Last Five Predictions</h2>
+    <div id="last-predictions">
+        <!-- Predictions will be dynamically inserted here -->
+    </div>
 </body>
 </html>
