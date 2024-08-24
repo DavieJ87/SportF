@@ -1,9 +1,11 @@
-// Import Firebase libraries
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+// profile.js
 
-// Firebase configuration
+// Import Firebase modules
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+// Firebase configuration (replace with your actual config)
 const firebaseConfig = {
     apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
     authDomain: "sportf-8c772.firebaseapp.com",
@@ -16,45 +18,49 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const database = getDatabase(app);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
 
+// DOM Elements
+const userNameEl = document.getElementById('user-name');
+const userEmailEl = document.getElementById('user-email');
+const totalPointsEl = document.getElementById('total-points');
+const lastPredictionsEl = document.getElementById('last-predictions');
 
-// Function to fetch user profile data
-function fetchUserProfile() {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const userId = user.uid;
-    const userPointsRef = ref(database, `users/${userId}/total_points`);
-    const predictionsRef = ref(database, `predictions/${userId}`);
-
-    // Display user's total points
-    get(userPointsRef).then(snapshot => {
-        if (snapshot.exists()) {
-            document.getElementById('user-points').textContent = `Total Points: ${snapshot.val()}`;
-        }
-    });
-
-    // Display last 5 predictions
-    get(predictionsRef).then(snapshot => {
-        if (snapshot.exists()) {
-            const predictions = Object.values(snapshot.val());
-            const lastFivePredictions = predictions.slice(-5).reverse(); // Get last 5
-
-            const predictionList = document.getElementById('prediction-list');
-            predictionList.innerHTML = ''; // Clear the list first
-
-            lastFivePredictions.forEach(prediction => {
-                const predictionItem = document.createElement('li');
-                predictionItem.textContent = `Match: ${prediction.matchId}, Points: ${prediction.points}`;
-                predictionList.appendChild(predictionItem);
+// Authenticate User and Initialize Profile
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        displayUserInfo(user);
+        fetchAndDisplayTotalPoints(user.uid);
+        fetchAndDisplayLastFivePredictions(user.uid);
+    } else {
+        // If not signed in, initiate sign-in
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                const signedInUser = result.user;
+                displayUserInfo(signedInUser);
+                fetchAndDisplayTotalPoints(signedInUser.uid);
+                fetchAndDisplayLastFivePredictions(signedInUser.uid);
+            })
+            .catch((error) => {
+                console.error('Error during sign-in:', error);
             });
-        }
-    }).catch(error => {
-        console.error('Error fetching user predictions:', error);
-    });
+    }
+});
+
+// Function to Display User Information
+function displayUserInfo(user) {
+    userNameEl.textContent = `Name: ${user.displayName}`;
+    userEmailEl.textContent = `Email: ${user.email}`;
 }
 
-// Load user profile when the page loads
-document.addEventListener('DOMContentLoaded', fetchUserProfile);
+// Function to Fetch and Display Total Points by Season
+function fetchAndDisplayTotalPoints(userId) {
+    const userPointsRef = ref(database, `user_points/${userId}`);
+    get(userPointsRef)
+        .then((snapshot) => {
+            if (snapshot.exists()) {
+                const seasonsData = snapshot.val();
+                displayTotalPoints(seasonsData);
+            } else
