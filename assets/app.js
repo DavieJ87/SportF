@@ -1,6 +1,6 @@
 // Import Firebase libraries
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 import { getDatabase, ref, set, get, update, onValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
 
 // Firebase configuration
@@ -249,37 +249,56 @@ function saveWeekPredictions(predictions, selectedWeek) {
                     predicted_home_score: prediction.predicted_home_score,
                     predicted_away_score: prediction.predicted_away_score,
                     predicted_outcome: prediction.predicted_outcome,
-                    points: points, // Store points for the prediction
-                    timestamp: Date.now() // Add timestamp
+                    points: points // Store the calculated points
                 };
             }
-        }).catch(error => {
-            console.error('Error fetching match data:', error);
         });
     });
 
+    // Execute all promises and then update Firebase
     Promise.all(predictionPromises).then(() => {
-        // Store total points for the week
-        updates[`users/${userId}/points_by_week/${selectedWeek}`] = {
-            points: weekTotalPoints
-        };
+        updates[`predictions/${userId}/${selectedWeek}/total_points`] = weekTotalPoints;
 
-        // Execute the updates in the database
-        update(ref(database), updates).then(() => {
-            alert('Predictions saved successfully!');
+        // Update the user's total points for all weeks
+        updateUserTotalPoints(userId).then(totalPoints => {
+            alert(`Predictions for week ${selectedWeek} submitted successfully. Week points: ${weekTotalPoints}. Total points: ${totalPoints}`);
         }).catch(error => {
-            console.error('Error updating database:', error);
+            console.error('Error updating total points:', error);
         });
-    }).catch(error => {
-        console.error('Error saving predictions:', error);
+
+        // Save the week predictions
+        update(ref(database), updates)
+            .catch(error => {
+                console.error('Error saving predictions:', error);
+            });
     });
 }
 
-// Firebase authentication state observer
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        console.log("User signed in:", user.displayName);
-    } else {
-        console.log("No user signed in.");
-    }
-});
+// Function to update and calculate user's total points across all weeks
+function updateUserTotalPoints(userId) {
+    return new Promise((resolve, reject) => {
+        const userPredictionsRef = ref(database, `predictions/${userId}`);
+
+        get(userPredictionsRef).then(snapshot => {
+            if (snapshot.exists()) {
+                const allWeeksData = snapshot.val();
+                let totalPoints = 0;
+
+                // Sum up total points across all weeks
+                for (const week in allWeeksData) {
+                    if (allWeeksData[week].total_points) {
+                        totalPoints += allWeeksData[week].total_points;
+                    }
+                }
+
+                // Update the total points in the database
+                const userTotalPointsRef = ref(database, `users/${userId}/total_points`);
+                set(userTotalPointsRef, totalPoints).then(() => {
+                    resolve(totalPoints); // Return the calculated total points
+                }).catch(reject);
+            } else {
+                resolve(0); // No predictions made yet
+            }
+        }).catch(reject);
+    });
+}
