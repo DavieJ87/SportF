@@ -24,19 +24,97 @@ let userNameElem = document.getElementById('user-name');
 let userEmailElem = document.getElementById('user-email');
 let userPhotoElem = document.getElementById('user-photo');
 let totalPointsElem = document.getElementById('total-points');
+let recentPredictionsContainer = document.getElementById('recent-predictions');
 let logoutBtn = document.getElementById('logout-btn');
 
 // Function to display user profile information
 function displayUserProfile(user) {
-    userNameElem.textContent = user.displayName;
-    userEmailElem.textContent = user.email;
-    userPhotoElem.src = user.photoURL || 'default-profile.png'; // Use a default image if the user doesn't have a photo
+    if (userNameElem) userNameElem.textContent = user.displayName;
+    if (userEmailElem) userEmailElem.textContent = user.email;
+    if (userPhotoElem) userPhotoElem.src = user.photoURL || 'default-profile.png'; // Use a default image if the user doesn't have a photo
 
     // Fetch and display user's total points
-    const userTotalPointsRef = ref(database, `users/${user.uid}/total_points`);
-    onValue(userTotalPointsRef, (snapshot) => {
-        const totalPoints = snapshot.val() || 0; // Default to 0 if no points are found
-        totalPointsElem.textContent = `Total Points: ${totalPoints}`;
+    fetchTotalPoints(user.uid);
+
+    // Fetch and display the user's most recent predictions
+    fetchRecentPredictions(user.uid);
+}
+
+// Function to fetch and display the user's total points
+function fetchTotalPoints(userId) {
+    const userPointsRef = ref(database, `users/${userId}/points_by_week`);
+    onValue(userPointsRef, (snapshot) => {
+        if (snapshot.exists()) {
+            const pointsByWeek = snapshot.val();
+            let totalPoints = 0;
+
+            for (let week in pointsByWeek) {
+                totalPoints += pointsByWeek[week].points || 0;
+            }
+
+            if (totalPointsElem) {
+                totalPointsElem.textContent = `Total Points: ${totalPoints}`;
+            }
+        } else {
+            console.log("No points data available for this user.");
+            if (totalPointsElem) {
+                totalPointsElem.textContent = "Total Points: 0";
+            }
+        }
+    }, (error) => {
+        console.error('Error fetching total points:', error);
+    });
+}
+
+// Function to fetch and display the user's recent predictions
+function fetchRecentPredictions(userId) {
+    const userPredictionsRef = ref(database, `predictions/${userId}`);
+
+    get(userPredictionsRef).then((snapshot) => {
+        if (snapshot.exists()) {
+            const predictions = snapshot.val();
+            const recentPredictions = [];
+            const maxRecent = 5;
+
+            // Flatten predictions and sort by timestamp
+            Object.keys(predictions).forEach(week => {
+                Object.keys(predictions[week]).forEach(matchId => {
+                    const prediction = predictions[week][matchId];
+                    prediction.week = week; // Add the week information
+                    prediction.matchId = matchId; // Add match ID information
+                    recentPredictions.push(prediction);
+                });
+            });
+
+            // Sort predictions by timestamp and get the latest 5
+            recentPredictions.sort((a, b) => b.timestamp - a.timestamp);
+            const latestPredictions = recentPredictions.slice(0, maxRecent);
+
+            // Display the predictions
+            if (recentPredictionsContainer) {
+                recentPredictionsContainer.innerHTML = ""; // Clear previous content
+                latestPredictions.forEach(prediction => {
+                    const predictionElem = document.createElement('div');
+                    predictionElem.className = 'prediction-item';
+                    predictionElem.innerHTML = `
+                        <p>Week: ${prediction.week}</p>
+                        <p>Match: ${prediction.matchId}</p>
+                        <p>Predicted: ${prediction.predicted_home_score} - ${prediction.predicted_away_score}</p>
+                        <p>Outcome: ${prediction.predicted_outcome}</p>
+                        <p>Points: ${prediction.points}</p>
+                        <p>Date: ${new Date(prediction.timestamp).toLocaleString()}</p>
+                    `;
+                    recentPredictionsContainer.appendChild(predictionElem);
+                });
+            }
+        } else {
+            console.log("No recent predictions found for this user.");
+            if (recentPredictionsContainer) {
+                recentPredictionsContainer.innerHTML = "<p>No recent predictions available.</p>";
+            }
+        }
+    }).catch((error) => {
+        console.error('Error fetching predictions:', error);
     });
 }
 
