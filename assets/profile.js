@@ -82,14 +82,31 @@ function fetchLastFivePredictions(userId) {
                 lastFive.forEach(prediction => {
                     const predictionItem = document.createElement('div');
                     predictionItem.className = 'prediction-item';
-                    predictionItem.innerHTML = `
-                        <p><strong>Week ${prediction.week}</strong></p>
-                        <p>Match ID: ${prediction.matchId}</p>
-                        <p>Home Score: ${prediction.predicted_home_score}, Away Score: ${prediction.predicted_away_score}</p>
-                        <p>Outcome: ${prediction.predicted_outcome}, Points: ${prediction.points}</p>
-                        <p><small>Timestamp: ${new Date(prediction.timestamp).toLocaleString()}</small></p>
-                    `;
-                    lastPredictionsList.appendChild(predictionItem);
+
+                    // Fetching match details
+                    const matchRef = ref(database, `matches/${prediction.matchId}`);
+                    get(matchRef).then(matchSnapshot => {
+                        if (matchSnapshot.exists()) {
+                            const matchData = matchSnapshot.val();
+                            const homeTeam = matchData.home_team;
+                            const awayTeam = matchData.away_team;
+
+                            predictionItem.innerHTML = `
+                                <p><strong>Week ${prediction.week}</strong></p>
+                                <p>${homeTeam} vs ${awayTeam}</p>
+                                <p>Predicted Score: ${prediction.predicted_home_score} - ${prediction.predicted_away_score}</p>
+                                <p>Outcome: ${prediction.predicted_outcome}, Points: ${prediction.points}</p>
+                                <p><small>Timestamp: ${prediction.timestamp ? new Date(prediction.timestamp).toLocaleString() : 'N/A'}</small></p>
+                            `;
+                        } else {
+                            console.error(`No match data found for match ID: ${prediction.matchId}`);
+                            predictionItem.innerHTML = `<p>Error loading match details for week ${prediction.week}</p>`;
+                        }
+
+                        lastPredictionsList.appendChild(predictionItem);
+                    }).catch(error => {
+                        console.error(`Error fetching match data for match ID: ${prediction.matchId}`, error);
+                    });
                 });
             }
         } else {
