@@ -48,8 +48,13 @@ function fetchTotalPoints(userId) {
             const pointsByWeek = snapshot.val();
             let totalPoints = 0;
 
-            for (let week in pointsByWeek) {
-                totalPoints += pointsByWeek[week].points || 0;
+            // Ensure the data is in the expected format
+            if (typeof pointsByWeek === 'object' && pointsByWeek !== null) {
+                for (let week in pointsByWeek) {
+                    if (pointsByWeek.hasOwnProperty(week) && typeof pointsByWeek[week] === 'object') {
+                        totalPoints += pointsByWeek[week].points || 0;
+                    }
+                }
             }
 
             if (totalPointsElem) {
@@ -76,15 +81,21 @@ function fetchRecentPredictions(userId) {
             const recentPredictions = [];
             const maxRecent = 5;
 
-            // Flatten predictions and sort by timestamp
-            Object.keys(predictions).forEach(week => {
-                Object.keys(predictions[week]).forEach(matchId => {
-                    const prediction = predictions[week][matchId];
-                    prediction.week = week; // Add the week information
-                    prediction.matchId = matchId; // Add match ID information
-                    recentPredictions.push(prediction);
+            // Check that the predictions data is in the expected format
+            if (typeof predictions === 'object' && predictions !== null) {
+                Object.keys(predictions).forEach(week => {
+                    if (typeof predictions[week] === 'object' && predictions[week] !== null) {
+                        Object.keys(predictions[week]).forEach(matchId => {
+                            const prediction = predictions[week][matchId];
+                            if (typeof prediction === 'object' && prediction !== null) {
+                                prediction.week = week; // Add the week information
+                                prediction.matchId = matchId; // Add match ID information
+                                recentPredictions.push(prediction);
+                            }
+                        });
+                    }
                 });
-            });
+            }
 
             // Sort predictions by timestamp and get the latest 5
             recentPredictions.sort((a, b) => b.timestamp - a.timestamp);
