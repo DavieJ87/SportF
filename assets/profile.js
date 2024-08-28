@@ -42,31 +42,29 @@ function displayUserProfile(user) {
 
 // Function to fetch and display the user's total points
 function fetchTotalPoints(userId) {
-    const userPointsRef = ref(database, `users/${userId}/points_by_week`);
-    onValue(userPointsRef, (snapshot) => {
+    const userPredictionsRef = ref(database, `predictions/${userId}`);
+    get(userPredictionsRef).then((snapshot) => {
         if (snapshot.exists()) {
-            const pointsByWeek = snapshot.val();
+            const predictionsByWeek = snapshot.val();
             let totalPoints = 0;
 
-            // Ensure the data is in the expected format
-            if (typeof pointsByWeek === 'object' && pointsByWeek !== null) {
-                for (let week in pointsByWeek) {
-                    if (pointsByWeek.hasOwnProperty(week) && typeof pointsByWeek[week] === 'object') {
-                        totalPoints += pointsByWeek[week].points || 0;
-                    }
+            // Iterate through each week and sum the total_points
+            Object.keys(predictionsByWeek).forEach(week => {
+                if (predictionsByWeek[week] && predictionsByWeek[week].total_points) {
+                    totalPoints += predictionsByWeek[week].total_points;
                 }
-            }
+            });
 
             if (totalPointsElem) {
                 totalPointsElem.textContent = `Total Points: ${totalPoints}`;
             }
         } else {
-            console.log("No points data available for this user.");
+            console.log("No predictions data available for this user.");
             if (totalPointsElem) {
                 totalPointsElem.textContent = "Total Points: 0";
             }
         }
-    }, (error) => {
+    }).catch((error) => {
         console.error('Error fetching total points:', error);
     });
 }
@@ -81,21 +79,17 @@ function fetchRecentPredictions(userId) {
             const recentPredictions = [];
             const maxRecent = 5;
 
-            // Check that the predictions data is in the expected format
-            if (typeof predictions === 'object' && predictions !== null) {
-                Object.keys(predictions).forEach(week => {
-                    if (typeof predictions[week] === 'object' && predictions[week] !== null) {
-                        Object.keys(predictions[week]).forEach(matchId => {
-                            const prediction = predictions[week][matchId];
-                            if (typeof prediction === 'object' && prediction !== null) {
-                                prediction.week = week; // Add the week information
-                                prediction.matchId = matchId; // Add match ID information
-                                recentPredictions.push(prediction);
-                            }
-                        });
+            // Iterate through each week and match to collect predictions
+            Object.keys(predictions).forEach(week => {
+                Object.keys(predictions[week]).forEach(matchId => {
+                    const prediction = predictions[week][matchId];
+                    if (typeof prediction === 'object' && prediction !== null) {
+                        prediction.week = week; // Add the week information
+                        prediction.matchId = matchId; // Add match ID information
+                        recentPredictions.push(prediction);
                     }
                 });
-            }
+            });
 
             // Sort predictions by timestamp and get the latest 5
             recentPredictions.sort((a, b) => b.timestamp - a.timestamp);
