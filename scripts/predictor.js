@@ -54,41 +54,42 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Display games for the selected date
-    function displayGamesByDate(selectedDate, schedule) {
-        gameTableBody.innerHTML = ''; // Clear previous table content
-        const gamesForDate = schedule.filter(game => game.DateTime.split('T')[0] === selectedDate);
+function displayGamesByDate(games) {
+    const gameTableBody = document.getElementById('gameTableBody');
+    gameTableBody.innerHTML = ''; // Clear previous rows
 
-        gamesForDate.forEach(game => {
-            const row = document.createElement('tr');
+console.log('Home Team Data:', homeTeam);
+console.log('Away Team Data:', awayTeam);
 
-            // Get team info
-            const awayTeam = teams[game.GlobalAwayTeamID];
-            const homeTeam = teams[game.GlobalHomeTeamID];
+    games.forEach((game) => {
+        // Get team data from teamsData using GlobalHomeTeamID and GlobalAwayTeamID
+        const homeTeam = teamsData[game.GlobalHomeTeamID];
+        const awayTeam = teamsData[game.GlobalAwayTeamID];
 
-            // Away team cell
-            const awayTeamCell = document.createElement('td');
-            awayTeamCell.innerHTML = `<img src="${awayTeam.WikipediaLogoUrl}" alt="${awayTeam.Name}" width="50"> ${awayTeam.Name}`;
-            row.appendChild(awayTeamCell);
+        // If the team data is missing, handle it
+        const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url';
+        const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : 'default_logo_url';
 
-            // Home team cell
-            const homeTeamCell = document.createElement('td');
-            homeTeamCell.innerHTML = `<img src="${homeTeam.WikipediaLogoUrl}" alt="${homeTeam.Name}" width="50"> ${homeTeam.Name}`;
-            row.appendChild(homeTeamCell);
+        const homeTeamName = homeTeam ? homeTeam.TeamName : 'Unknown Team';
+        const awayTeamName = awayTeam ? awayTeam.TeamName : 'Unknown Team';
 
-            // Winner selection cell
-            const selectWinnerCell = document.createElement('td');
-            const winnerSelect = document.createElement('input');
-            winnerSelect.type = 'checkbox';
-            winnerSelect.dataset.gameId = game.GameID; // Store Game ID in the checkbox
-            selectWinnerCell.appendChild(winnerSelect);
-            row.appendChild(selectWinnerCell);
+        // Create a new row in the table for each game
+        const row = document.createElement('tr');
 
-            gameTableBody.appendChild(row);
-        });
+        row.innerHTML = `
+            <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
+            <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
+            <td>
+                <input type="checkbox" data-game-id="${game.GameID}" data-pick="away"> Away Win
+                <input type="checkbox" data-game-id="${game.GameID}" data-pick="home"> Home Win
+            </td>
+        `;
 
-        // Show game table after selection
-        gameTable.classList.remove('hidden');
-    }
+        gameTableBody.appendChild(row);
+    });
+
+    document.getElementById('gameTable').classList.remove('hidden');
+}
 
     // Submit predictions
     function submitPredictions() {
