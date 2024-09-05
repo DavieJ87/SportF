@@ -13,13 +13,15 @@ document.addEventListener('DOMContentLoaded', function () {
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // Grab elements
     const userInfo = document.getElementById('user-info');
     const dateMenuContainer = document.getElementById('dateMenuContainer');
     const gameTable = document.getElementById('gameTable');
     const gameTableBody = document.getElementById('gameTableBody');
     const submitBtn = document.getElementById('submitBtn');
 
-    if (!dateMenuContainer || !gameTable || !gameTableBody || !submitBtn) {
+    // Check for null elements before proceeding
+    if (!userInfo || !dateMenuContainer || !gameTable || !gameTableBody || !submitBtn) {
         console.error("One or more DOM elements are null");
         return;
     }
