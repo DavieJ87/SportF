@@ -68,11 +68,11 @@ function renderGameList(games) {
         const row = document.createElement('tr');
         
         const awayTeam = document.createElement('td');
-        awayTeam.innerHTML = `<img src="nba/teams/${game.AwayTeamID}/logo.png" alt="logo" width="30"> ${game.AwayTeam}`;
+        awayTeam.innerHTML = `<img src="nba/teams/${game.AwayTeamID}/WikipediaLogoUrl" alt="logo" width="30"> ${game.AwayTeam}`;
         row.appendChild(awayTeam);
 
         const homeTeam = document.createElement('td');
-        homeTeam.innerHTML = `<img src="nba/teams/${game.HomeTeamID}/logo.png" alt="logo" width="30"> ${game.HomeTeam}`;
+        homeTeam.innerHTML = `<img src="nba/teams/${game.HomeTeamID}/WikipediaLogoUrl" alt="logo" width="30"> ${game.HomeTeam}`;
         row.appendChild(homeTeam);
 
         const winnerSelect = document.createElement('td');
