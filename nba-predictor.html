@@ -1,38 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Predictor</title>
-    <link rel="stylesheet" href="assets/styles.css"> <!-- Link to external CSS -->
-    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
-    <script src="assets/nba-predictor.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NBA Predictor</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="/__/firebase/9.9.1/firebase-app.js"></script>
+  <script defer src="/__/firebase/9.9.1/firebase-auth.js"></script>
+  <script defer src="/__/firebase/9.9.1/firebase-database.js"></script>
+  <script defer src="/__/firebase/init.js"></script>
+  <script defer src="assets/nba-predictor.js"></script>
 </head>
 <body>
-    <header>
-        <h1>NBA Game Predictions</h1>
-        <div id="user-info"></div>
-    </header>
-    <main>
-        <!-- Date Selection Menu -->
-        <div class="date-menu" id="date-menu"></div>
+  <header>
+    <h1>NBA Game Predictor</h1>
+  </header>
 
-        <!-- Game Listing Table -->
-        <table id="game-table">
-            <thead>
-                <tr>
-                    <th>Away Team</th>
-                    <th>Home Team</th>
-                    <th>Pick Winner</th>
-                </tr>
-            </thead>
-            <tbody id="game-list"></tbody>
-        </table>
+  <section>
+    <!-- Date selection menu -->
+    <div class="date-selector">
+      <div id="scrollable-dates">
+        <!-- Dates will be dynamically added here -->
+      </div>
+    </div>
 
-        <!-- Submit Button -->
-        <button id="submit-predictions" disabled>Submit Predictions</button>
-    </main>
+    <!-- Game table (Initially hidden) -->
+    <div id="game-table-container">
+      <table id="game-table" style="display:none;">
+        <thead>
+          <tr>
+            <th>Away Team</th>
+            <th>Home Team</th>
+            <th>Pick Winner</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Games will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Submit button -->
+    <button id="submit-btn" style="display:none;">Submit Predictions</button>
+  </section>
+
 </body>
 </html>
