@@ -102,7 +102,7 @@ document.getElementById('submit-predictions').addEventListener('click', () => {
     });
 
     if (Object.keys(selectedPredictions).length > 0) {
-        db.ref(`predictions/${userID}/${selectedDate}`).set(selectedPredictions)
+        db.ref(`predictions/${userID}/nba/${selectedDate}`).set(selectedPredictions)
             .then(() => alert('Predictions submitted!'))
             .catch(err => console.error(err));
     }
