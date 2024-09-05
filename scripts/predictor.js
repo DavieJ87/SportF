@@ -58,8 +58,7 @@ function displayGamesByDate(games) {
     const gameTableBody = document.getElementById('gameTableBody');
     gameTableBody.innerHTML = ''; // Clear previous rows
 
-console.log('Home Team Data:', homeTeam);
-console.log('Away Team Data:', awayTeam);
+
 
     games.forEach((game) => {
         // Get team data from teamsData using GlobalHomeTeamID and GlobalAwayTeamID
@@ -72,6 +71,9 @@ console.log('Away Team Data:', awayTeam);
 
         const homeTeamName = homeTeam ? homeTeam.TeamName : 'Unknown Team';
         const awayTeamName = awayTeam ? awayTeam.TeamName : 'Unknown Team';
+
+        console.log('Home Team Data:', homeTeam);
+        console.log('Away Team Data:', awayTeam);
 
         // Create a new row in the table for each game
         const row = document.createElement('tr');
