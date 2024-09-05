@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NBA Predictor</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to external CSS -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
+    <script src="nba-predictor.js" defer></script>
+</head>
+<body>
+    <header>
+        <h1>NBA Game Predictions</h1>
+        <div id="user-info"></div>
+    </header>
+    <main>
+        <!-- Date Selection Menu -->
+        <div class="date-menu" id="date-menu"></div>
+
+        <!-- Game Listing Table -->
+        <table id="game-table">
+            <thead>
+                <tr>
+                    <th>Away Team</th>
+                    <th>Home Team</th>
+                    <th>Pick Winner</th>
+                </tr>
+            </thead>
+            <tbody id="game-list"></tbody>
+        </table>
+
+        <!-- Submit Button -->
+        <button id="submit-predictions" disabled>Submit Predictions</button>
+    </main>
+</body>
+</html>
