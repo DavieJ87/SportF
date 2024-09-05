@@ -10,104 +10,176 @@ var firebaseConfig = {
 };
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
 const db = firebase.database();
 
-// Load dates from NBA season data
-window.onload = function() {
-    const dateScroller = document.getElementById("dateScroller");
+// Elements
+const userInfo = document.getElementById('user-info');
+const dateScroller = document.getElementById('dateScroller');
+const gameTable = document.getElementById('gameTable');
+const gameTableBody = document.getElementById('gameTableBody');
+const submitButton = document.getElementById('submitButton');
 
-    // Fetch all game dates
-    db.ref('nba/season_2024').once('value', (snapshot) => {
+// Current User ID
+let currentUserId = null;
+
+// Authentication State Listener
+auth.onAuthStateChanged(user => {
+    if (user) {
+        currentUserId = user.uid;
+        userInfo.innerHTML = `Logged in as ${user.displayName} <img src="${user.photoURL}" alt="User Photo" width="30" style="border-radius:50%;">`;
+        loadDates();
+    } else {
+        userInfo.innerHTML = 'Not Logged In. Please <a href="index.html">Login</a>.';
+        // Optionally, redirect to login page
+        // window.location.href = 'index.html';
+    }
+});
+
+// Load Unique Dates from NBA Season Data
+function loadDates() {
+    db.ref('nba/season_2024').once('value', snapshot => {
         const games = snapshot.val();
-        const dates = new Set();
+        if (!games) {
+            dateScroller.innerHTML = '<p>No games available.</p>';
+            return;
+        }
 
-        // Extract unique dates from games
+        const datesSet = new Set();
         for (const gameId in games) {
             const game = games[gameId];
-            const gameDate = game.Day.split('T')[0];  // Only date part
-            dates.add(gameDate);
+            // Assuming 'Day' is in ISO format, e.g., '2024-10-15T19:30:00Z'
+            const date = game.Day.split('T')[0];
+            datesSet.add(date);
         }
 
-        // Display dates in the scroller
-        dates.forEach(date => {
-            const dateItem = document.createElement("div");
-            dateItem.className = "dateItem";
-            dateItem.textContent = date;
-            dateItem.onclick = () => loadGamesForDate(date);
-            dateScroller.appendChild(dateItem);
-        });
-    });
-};
-
-// Load games for selected date
-function loadGamesForDate(date) {
-    const gameTableBody = document.getElementById("gameTableBody");
-    const gameTable = document.getElementById("gameTable");
-    const submitButton = document.getElementById("submitButton");
-
-    // Clear previous games
-    gameTableBody.innerHTML = '';
-    gameTable.style.display = 'none';
-    submitButton.style.display = 'none';
-
-    // Fetch games for the selected date
-    db.ref('nba/season_2024').orderByChild('Day').equalTo(date).once('value', (snapshot) => {
-        const games = snapshot.val();
-
-        if (games) {
-            gameTable.style.display = 'block';  // Show table when games are available
-            submitButton.style.display = 'block';
-
-            for (const gameId in games) {
-                const game = games[gameId];
-                const awayTeam = game.AwayTeam;
-                const homeTeam = game.HomeTeam;
-
-                // Create row for the game
-                const row = document.createElement("tr");
-
-                // Away team logo and name
-                const awayTeamCell = document.createElement("td");
-                awayTeamCell.innerHTML = `<img src="${game.WikipediaLogoUrl}" alt="${awayTeam} logo" width="40"> ${awayTeam}`;
-                row.appendChild(awayTeamCell);
-
-                // Home team logo and name
-                const homeTeamCell = document.createElement("td");
-                homeTeamCell.innerHTML = `<img src="${game.WikipediaLogoUrl}" alt="${homeTeam} logo" width="40"> ${homeTeam}`;
-                row.appendChild(homeTeamCell);
-
-                // Winner selection checkbox
-                const winnerCell = document.createElement("td");
-                winnerCell.innerHTML = `
-                    <input type="radio" name="winner_${gameId}" value="away"> Away 
-                    <input type="radio" name="winner_${gameId}" value="home"> Home
-                `;
-                row.appendChild(winnerCell);
-
-                gameTableBody.appendChild(row);
-            }
-        }
+        const uniqueDates = Array.from(datesSet).sort();
+        renderDateScroller(uniqueDates);
     });
 }
 
-// Submit predictions
-document.getElementById("submitButton").onclick = function() {
-    const gameTableBody = document.getElementById("gameTableBody");
-    const predictions = {};
+// Render Date Scroller
+function renderDateScroller(dates) {
+    dates.forEach((date, index) => {
+        const dateItem = document.createElement('div');
+        dateItem.classList.add('date-item');
+        dateItem.textContent = formatDate(date);
+        dateItem.dataset.date = date;
 
-    // Loop through games and gather user predictions
-    for (let i = 0; i < gameTableBody.rows.length; i++) {
-        const row = gameTableBody.rows[i];
-        const gameId = row.cells[2].querySelector('input').name.split('_')[1];
-        const selectedWinner = row.cells[2].querySelector('input[type="radio"]:checked');
+        dateItem.addEventListener('click', () => {
+            // Remove 'selected' class from all date items
+            document.querySelectorAll('.date-item').forEach(item => item.classList.remove('selected'));
+            // Add 'selected' class to the clicked date
+            dateItem.classList.add('selected');
+            // Load games for the selected date
+            loadGamesForDate(date);
+        });
 
-        if (selectedWinner) {
-            predictions[gameId] = selectedWinner.value;
+        dateScroller.appendChild(dateItem);
+    });
+}
+
+// Format Date (e.g., 2024-10-15 to Oct 15, 2024)
+function formatDate(dateStr) {
+    const options = { year: 'numeric', month: 'short', day: 'numeric' };
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, options);
+}
+
+// Load Games for Selected Date
+function loadGamesForDate(date) {
+    // Clear previous games
+    gameTableBody.innerHTML = '';
+    gameTable.classList.add('hidden');
+    submitButton.classList.add('hidden');
+
+    // Fetch games for the selected date
+    db.ref('nba/season_2024').orderByChild('Day').equalTo(date).once('value', snapshot => {
+        const games = snapshot.val();
+        if (!games) {
+            gameTableBody.innerHTML = '<tr><td colspan="3">No games on this date.</td></tr>';
+            gameTable.classList.remove('hidden');
+            return;
         }
+
+        // Populate game table
+        for (const gameId in games) {
+            const game = games[gameId];
+            const awayTeam = game.AwayTeam; // Assuming 'AwayTeam' is the team name
+            const homeTeam = game.HomeTeam; // Assuming 'HomeTeam' is the team name
+            const awayLogoUrl = game.WikipediaLogoUrl_Away; // Adjust field name if different
+            const homeLogoUrl = game.WikipediaLogoUrl_Home; // Adjust field name if different
+
+            // Create table row
+            const row = document.createElement('tr');
+
+            // Away Team Cell
+            const awayCell = document.createElement('td');
+            awayCell.innerHTML = `<img src="${game.WikipediaLogoUrl_Away}" alt="${awayTeam} Logo" width="30"> ${awayTeam}`;
+            row.appendChild(awayCell);
+
+            // Home Team Cell
+            const homeCell = document.createElement('td');
+            homeCell.innerHTML = `<img src="${game.WikipediaLogoUrl_Home}" alt="${homeTeam} Logo" width="30"> ${homeTeam}`;
+            row.appendChild(homeCell);
+
+            // Winner Selection Cell
+            const winnerCell = document.createElement('td');
+            winnerCell.innerHTML = `
+                <label>
+                    <input type="radio" name="winner_${gameId}" value="Away"> Away
+                </label>
+                <label>
+                    <input type="radio" name="winner_${gameId}" value="Home"> Home
+                </label>
+            `;
+            row.appendChild(winnerCell);
+
+            gameTableBody.appendChild(row);
+        }
+
+        // Show game table and submit button
+        gameTable.classList.remove('hidden');
+        submitButton.classList.remove('hidden');
+    });
+}
+
+// Handle Prediction Submission
+submitButton.addEventListener('click', () => {
+    if (!currentUserId) {
+        alert('You must be logged in to submit predictions.');
+        return;
     }
 
-    const userId = firebase.auth().currentUser.uid;
-    db.ref(`predictions/${userId}`).set(predictions)
-        .then(() => alert('Predictions saved!'))
-        .catch(error => console.error("Error saving predictions:", error));
-};
+    const predictions = {};
+    const radioButtons = document.querySelectorAll('input[type="radio"]:checked');
+
+    radioButtons.forEach(radio => {
+        const gameId = radio.name.split('_')[1];
+        const predictedWinner = radio.value;
+        predictions[gameId] = predictedWinner;
+    });
+
+    if (Object.keys(predictions).length === 0) {
+        alert('Please select at least one prediction.');
+        return;
+    }
+
+    // Get selected date
+    const selectedDateItem = document.querySelector('.date-item.selected');
+    if (!selectedDateItem) {
+        alert('No date selected.');
+        return;
+    }
+    const selectedDate = selectedDateItem.dataset.date;
+
+    // Save predictions to Firebase
+    db.ref(`nba/predictions/${currentUserId}/${selectedDate}`).set(predictions)
+        .then(() => {
+            alert('Predictions submitted successfully!');
+        })
+        .catch(error => {
+            console.error('Error submitting predictions:', error);
+            alert('There was an error submitting your predictions. Please try again.');
+        });
+});
