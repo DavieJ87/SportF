@@ -58,6 +58,9 @@ function displayDateMenu() {
 function displayGamesByDate(selectedDate) {
     const gamesForDate = Object.values(scheduleData).filter(game => game.DateTime.startsWith(selectedDate));
 
+    // Log match data for debugging
+    console.log(`Games for Date: ${selectedDate}`, gamesForDate);
+
     if (!Array.isArray(gamesForDate) || gamesForDate.length === 0) {
         console.error('No games found for the selected date:', selectedDate);
         return;
@@ -70,8 +73,8 @@ function displayGamesByDate(selectedDate) {
         const homeTeamID = game.HomeTeamID;
         const awayTeamID = game.AwayTeamID;
 
-        // Log the team IDs to debug
-        console.log(`Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
+        // Log the match details
+        console.log(`Game ID: ${game.GameID}, Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
 
         // Get team data using HomeTeamID and AwayTeamID
         const homeTeam = teamsData[homeTeamID];
