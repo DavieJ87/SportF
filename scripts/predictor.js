@@ -21,7 +21,7 @@ let scheduleData = {};
 function fetchTeams() {
     return db.ref('nba/teams').once('value').then(snapshot => {
         teamsData = snapshot.val();
-        console.log("Teams Data: ", teamsData);
+        console.log("Teams Data: ", teamsData);  // Log the teams data to verify structure
     });
 }
 
@@ -29,7 +29,7 @@ function fetchTeams() {
 function fetchSchedule() {
     return db.ref('nba/season_2024').once('value').then(snapshot => {
         scheduleData = snapshot.val();
-        console.log("Schedule Data: ", scheduleData);
+        console.log("Schedule Data: ", scheduleData);  // Log the schedule data
         displayDateMenu();
     });
 }
@@ -67,13 +67,22 @@ function displayGamesByDate(selectedDate) {
     gameTableBody.innerHTML = ''; // Clear previous rows
 
     gamesForDate.forEach((game) => {
+        const homeTeamID = game.GlobalHomeTeamID;
+        const awayTeamID = game.GlobalAwayTeamID;
+
+        // Log the team IDs to debug
+        console.log(`Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
+
         // Get team data using GlobalHomeTeamID and GlobalAwayTeamID
-        const homeTeam = teamsData[game.GlobalHomeTeamID];
-        const awayTeam = teamsData[game.GlobalAwayTeamID];
+        const homeTeam = teamsData[homeTeamID];
+        const awayTeam = teamsData[awayTeamID];
+
+        console.log(`Home Team Data: `, homeTeam);
+        console.log(`Away Team Data: `, awayTeam);
 
         // Handle cases where team data is missing
-        const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url';
-        const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : 'default_logo_url';
+        const homeTeamLogo = homeTeam && homeTeam.WikipediaLogoUrl ? homeTeam.WikipediaLogoUrl : 'default_logo_url';
+        const awayTeamLogo = awayTeam && awayTeam.WikipediaLogoUrl ? awayTeam.WikipediaLogoUrl : 'default_logo_url';
 
         const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
         const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
