@@ -76,19 +76,24 @@ function displayGamesByDate(selectedDate) {
         // Log the match details
         console.log(`Game ID: ${game.GameID}, Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
 
-        // Get team data using HomeTeamID and AwayTeamID
+        // Fetch team data from teamsData using the HomeTeamID and AwayTeamID
         const homeTeam = teamsData[homeTeamID];
         const awayTeam = teamsData[awayTeamID];
 
-        console.log(`Home Team Data: `, homeTeam);
-        console.log(`Away Team Data: `, awayTeam);
+        if (!homeTeam || !awayTeam) {
+            console.error(`Team data not found for Game ID: ${game.GameID}, HomeTeamID: ${homeTeamID}, AwayTeamID: ${awayTeamID}`);
+            return;
+        }
 
-        // Handle cases where team data is missing
-        const homeTeamLogo = homeTeam && homeTeam.WikipediaLogoUrl ? homeTeam.WikipediaLogoUrl : 'default_logo_url';
-        const awayTeamLogo = awayTeam && awayTeam.WikipediaLogoUrl ? awayTeam.WikipediaLogoUrl : 'default_logo_url';
+        // Log the home and away teams to verify correct mapping
+        console.log(`Home Team: ${homeTeam.Name}, Away Team: ${awayTeam.Name}`);
 
-        const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
-        const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
+        // Ensure we have valid data for team names and logos
+        const homeTeamLogo = homeTeam.WikipediaLogoUrl || 'default_logo_url';
+        const awayTeamLogo = awayTeam.WikipediaLogoUrl || 'default_logo_url';
+
+        const homeTeamName = homeTeam.Name || 'Unknown Team';
+        const awayTeamName = awayTeam.Name || 'Unknown Team';
 
         // Create a new row in the table for each game
         const row = document.createElement('tr');
