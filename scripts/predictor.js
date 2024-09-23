@@ -1,79 +1,82 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const firebaseConfig = {
-        apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
-        authDomain: "sportf-8c772.firebaseapp.com",
-        databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
-        projectId: "sportf-8c772",
-        storageBucket: "sportf-8c772.appspot.com",
-        messagingSenderId: "523775447476",
-        appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
-    };
+// Firebase config
+const firebaseConfig = {
+    apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
+    authDomain: "sportf-8c772.firebaseapp.com",
+    databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
+    projectId: "sportf-8c772",
+    storageBucket: "sportf-8c772.appspot.com",
+    messagingSenderId: "523775447476",
+    appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
+};
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    // Grab elements
-    const userInfo = document.getElementById('user-info');
+// Data objects to store teams and schedule information
+let teamsData = {};
+let scheduleData = {};
+
+// Fetch teams data from Firebase
+function fetchTeams() {
+    return db.ref('nba/teams').once('value').then(snapshot => {
+        teamsData = snapshot.val();
+        console.log("Teams Data: ", teamsData);
+    });
+}
+
+// Fetch schedule data from Firebase
+function fetchSchedule() {
+    return db.ref('nba/season_2024').once('value').then(snapshot => {
+        scheduleData = snapshot.val();
+        console.log("Schedule Data: ", scheduleData);
+        displayDateMenu();
+    });
+}
+
+// Display date selection menu
+function displayDateMenu() {
     const dateMenuContainer = document.getElementById('dateMenuContainer');
-    const gameTable = document.getElementById('gameTable');
-    const gameTableBody = document.getElementById('gameTableBody');
-    const submitBtn = document.getElementById('submitBtn');
 
-    // Check for null elements before proceeding
-    if (!userInfo || !dateMenuContainer || !gameTable || !gameTableBody || !submitBtn) {
-        console.error("One or more DOM elements are null");
+    if (!dateMenuContainer) {
+        console.error('Date menu container is not found!');
         return;
     }
 
-    // Load NBA teams data
-    let teams = {};
-    function loadTeams() {
-        return database.ref('nba/teams').once('value').then((snapshot) => {
-            teams = snapshot.val();
-        });
+    // Get unique dates from schedule
+    const uniqueDates = [...new Set(Object.values(scheduleData).map(game => game.DateTime.split('T')[0]))];
+    
+    uniqueDates.forEach(date => {
+        const button = document.createElement('button');
+        button.textContent = date;
+        button.addEventListener('click', () => displayGamesByDate(date));
+        dateMenuContainer.appendChild(button);
+    });
+}
+
+// Display games for the selected date
+function displayGamesByDate(selectedDate) {
+    const gamesForDate = Object.values(scheduleData).filter(game => game.DateTime.startsWith(selectedDate));
+
+    if (!Array.isArray(gamesForDate) || gamesForDate.length === 0) {
+        console.error('No games found for the selected date:', selectedDate);
+        return;
     }
 
-    // Load NBA schedule data
-    function loadSchedule() {
-        return database.ref('nba/season_2024').once('value').then((snapshot) => {
-            return snapshot.val();
-        });
-    }
-
-    // Display date menu for selecting games
-    function displayDateMenu(schedule) {
-        const uniqueDates = [...new Set(schedule.map(game => game.DateTime.split('T')[0]))];
-
-        uniqueDates.forEach(date => {
-            const dateButton = document.createElement('button');
-            dateButton.textContent = date;
-            dateButton.addEventListener('click', () => displayGamesByDate(date, schedule));
-            dateMenuContainer.appendChild(dateButton);
-        });
-    }
-
-    // Display games for the selected date
-function displayGamesByDate(games) {
     const gameTableBody = document.getElementById('gameTableBody');
     gameTableBody.innerHTML = ''; // Clear previous rows
 
-
-
-    games.forEach((game) => {
-        // Get team data from teamsData using GlobalHomeTeamID and GlobalAwayTeamID
+    gamesForDate.forEach((game) => {
+        // Get team data using GlobalHomeTeamID and GlobalAwayTeamID
         const homeTeam = teamsData[game.GlobalHomeTeamID];
         const awayTeam = teamsData[game.GlobalAwayTeamID];
 
-        // If the team data is missing, handle it
+        // Handle cases where team data is missing
         const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url';
         const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : 'default_logo_url';
 
-        const homeTeamName = homeTeam ? homeTeam.TeamName : 'Unknown Team';
-        const awayTeamName = awayTeam ? awayTeam.TeamName : 'Unknown Team';
-
-        console.log('Home Team Data:', homeTeam);
-        console.log('Away Team Data:', awayTeam);
+        const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
+        const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
 
         // Create a new row in the table for each game
         const row = document.createElement('tr');
@@ -82,8 +85,8 @@ function displayGamesByDate(games) {
             <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
             <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
             <td>
-                <input type="checkbox" data-game-id="${game.GameID}" data-pick="away"> Away Win
-                <input type="checkbox" data-game-id="${game.GameID}" data-pick="home"> Home Win
+                <input type="radio" name="game-${game.GameID}" value="away" data-game-id="${game.GameID}"> Away Win
+                <input type="radio" name="game-${game.GameID}" value="home" data-game-id="${game.GameID}"> Home Win
             </td>
         `;
 
@@ -93,50 +96,34 @@ function displayGamesByDate(games) {
     document.getElementById('gameTable').classList.remove('hidden');
 }
 
-    // Submit predictions
-    function submitPredictions() {
-        const selectedPredictions = [];
-        document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
-            selectedPredictions.push({
-                gameId: checkbox.dataset.gameId,
-                predictedWinner: checkbox.closest('tr').children[1].textContent.trim() // Home team
-            });
+// Submit predictions
+function submitPredictions() {
+    const predictions = [];
+
+    const radios = document.querySelectorAll('input[type="radio"]:checked');
+    radios.forEach(radio => {
+        predictions.push({
+            gameId: radio.getAttribute('data-game-id'),
+            winner: radio.value
         });
+    });
 
-        const user = firebase.auth().currentUser;
-        if (user) {
-            const userId = user.uid;
-            const predictionsRef = database.ref(`predictions/${userId}`);
+    const userId = firebase.auth().currentUser.uid;
+    db.ref(`nba/predictions/${userId}`).set(predictions).then(() => {
+        alert('Predictions submitted successfully!');
+    }).catch(error => {
+        console.error('Error submitting predictions:', error);
+    });
+}
 
-            predictionsRef.push({
-                predictions: selectedPredictions,
-                timestamp: new Date().toISOString()
-            }).then(() => {
-                alert('Predictions submitted successfully!');
-            }).catch((error) => {
-                console.error('Error submitting predictions:', error);
-            });
-        } else {
-            alert('You must be logged in to submit predictions.');
-        }
+// Set up event listener for the submit button
+document.getElementById('submitBtn').addEventListener('click', submitPredictions);
+
+// Fetch data and initialize the predictor page
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        fetchTeams().then(fetchSchedule);
+    } else {
+        window.location.href = 'login.html';
     }
-
-    // Load user data and handle SSO
-    firebase.auth().onAuthStateChanged(function(user) {
-        if (user) {
-            userInfo.textContent = `Logged in as ${user.displayName}`;
-        } else {
-            window.location.href = "index.html"; // Redirect to login if not authenticated
-        }
-    });
-
-    // Attach event listener for submitting predictions
-    submitBtn.addEventListener('click', submitPredictions);
-
-    // Load data and initialize the page
-    Promise.all([loadTeams(), loadSchedule()]).then(([_, schedule]) => {
-        displayDateMenu(schedule); // Populate date menu
-    }).catch((error) => {
-        console.error('Error loading data:', error);
-    });
 });
