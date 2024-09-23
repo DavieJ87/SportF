@@ -67,13 +67,13 @@ function displayGamesByDate(selectedDate) {
     gameTableBody.innerHTML = ''; // Clear previous rows
 
     gamesForDate.forEach((game) => {
-        const homeTeamID = game.GlobalHomeTeamID;
-        const awayTeamID = game.GlobalAwayTeamID;
+        const homeTeamID = game.HomeTeamID;
+        const awayTeamID = game.AwayTeamID;
 
         // Log the team IDs to debug
         console.log(`Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
 
-        // Get team data using GlobalHomeTeamID and GlobalAwayTeamID
+        // Get team data using HomeTeamID and AwayTeamID
         const homeTeam = teamsData[homeTeamID];
         const awayTeam = teamsData[awayTeamID];
 
@@ -109,30 +109,4 @@ function displayGamesByDate(selectedDate) {
 function submitPredictions() {
     const predictions = [];
 
-    const radios = document.querySelectorAll('input[type="radio"]:checked');
-    radios.forEach(radio => {
-        predictions.push({
-            gameId: radio.getAttribute('data-game-id'),
-            winner: radio.value
-        });
-    });
-
-    const userId = firebase.auth().currentUser.uid;
-    db.ref(`nba/predictions/${userId}`).set(predictions).then(() => {
-        alert('Predictions submitted successfully!');
-    }).catch(error => {
-        console.error('Error submitting predictions:', error);
-    });
-}
-
-// Set up event listener for the submit button
-document.getElementById('submitBtn').addEventListener('click', submitPredictions);
-
-// Fetch data and initialize the predictor page
-firebase.auth().onAuthStateChanged((user) => {
-    if (user) {
-        fetchTeams().then(fetchSchedule);
-    } else {
-        window.location.href = 'login.html';
-    }
-});
+    const radios = document.querySelec
