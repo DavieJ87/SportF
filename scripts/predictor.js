@@ -1,4 +1,6 @@
-// Firebase config
+// predictor.js
+
+// Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
     authDomain: "sportf-8c772.firebaseapp.com",
@@ -14,14 +16,16 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 // Data objects to store teams and schedule information
-let teamsData = {};
+let teamsData = [];
 let scheduleData = {};
 
 // Fetch teams data from Firebase
 function fetchTeams() {
     return db.ref('nba/teams').once('value').then(snapshot => {
-        teamsData = snapshot.val();
-        console.log("Teams Data: ", teamsData);  // Log the teams data to verify structure
+        const data = snapshot.val();
+        // Convert teams data to an array
+        teamsData = Object.values(data);
+        console.log("Teams Data: ", teamsData); // Log the teams data to verify structure
     });
 }
 
@@ -29,7 +33,7 @@ function fetchTeams() {
 function fetchSchedule() {
     return db.ref('nba/season_2024').once('value').then(snapshot => {
         scheduleData = snapshot.val();
-        console.log("Schedule Data: ", scheduleData);  // Log the schedule data
+        console.log("Schedule Data: ", scheduleData); // Log the schedule data
         displayDateMenu();
     });
 }
@@ -45,7 +49,7 @@ function displayDateMenu() {
 
     // Get unique dates from schedule
     const uniqueDates = [...new Set(Object.values(scheduleData).map(game => game.DateTime.split('T')[0]))];
-    
+
     uniqueDates.forEach(date => {
         const button = document.createElement('button');
         button.textContent = date;
@@ -73,27 +77,26 @@ function displayGamesByDate(selectedDate) {
         const homeTeamID = game.HomeTeamID;
         const awayTeamID = game.AwayTeamID;
 
-        // Log the match details
-        console.log(`Game ID: ${game.GameID}, Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
-
         // Fetch team data from teamsData using the HomeTeamID and AwayTeamID
-        const homeTeam = teamsData[homeTeamID];
-        const awayTeam = teamsData[awayTeamID];
+        const homeTeam = teamsData.find(team => team.TeamID === homeTeamID);
+        const awayTeam = teamsData.find(team => team.TeamID === awayTeamID);
 
+        // Log team mapping details for debugging
+        console.log(`Game ID: ${game.GameID} - Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
+        console.log(`Mapped Home Team: ${homeTeam ? homeTeam.Name : 'Unknown'} (${homeTeamID}), Away Team: ${awayTeam ? awayTeam.Name : 'Unknown'} (${awayTeamID})`);
+
+        // Ensure that the team data exists
         if (!homeTeam || !awayTeam) {
-            console.error(`Team data not found for Game ID: ${game.GameID}, HomeTeamID: ${homeTeamID}, AwayTeamID: ${awayTeamID}`);
+            console.error(`Team data not found for Game ID: ${game.GameID}`);
             return;
         }
-
-        // Log the home and away teams to verify correct mapping
-        console.log(`Home Team: ${homeTeam.Name}, Away Team: ${awayTeam.Name}`);
 
         // Ensure we have valid data for team names and logos
         const homeTeamLogo = homeTeam.WikipediaLogoUrl || 'default_logo_url';
         const awayTeamLogo = awayTeam.WikipediaLogoUrl || 'default_logo_url';
 
-        const homeTeamName = homeTeam.Name || 'Unknown Team';
-        const awayTeamName = awayTeam.Name || 'Unknown Team';
+        const homeTeamName = homeTeam.Name || homeTeam.City || 'Unknown Team';
+        const awayTeamName = awayTeam.Name || awayTeam.City || 'Unknown Team';
 
         // Create a new row in the table for each game
         const row = document.createElement('tr');
@@ -102,8 +105,12 @@ function displayGamesByDate(selectedDate) {
             <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
             <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
             <td>
-                <input type="radio" name="game-${game.GameID}" value="away" data-game-id="${game.GameID}"> Away Win
-                <input type="radio" name="game-${game.GameID}" value="home" data-game-id="${game.GameID}"> Home Win
+                <label>
+                    <input type="radio" name="game-${game.GameID}" value="away" data-game-id="${game.GameID}"> Away Win
+                </label>
+                <label>
+                    <input type="radio" name="game-${game.GameID}" value="home" data-game-id="${game.GameID}"> Home Win
+                </label>
             </td>
         `;
 
