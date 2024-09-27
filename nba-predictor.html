@@ -80,7 +80,7 @@
         // Load predictions for the user
         async function loadPredictions(userId) {
             try {
-                const predictionsRef = ref(database, 'predictions/' + userId);
+                const predictionsRef = ref(database, 'nba/predictions/' + userId);
                 const snapshot = await get(predictionsRef);
                 if (snapshot.exists()) {
                     console.log("User predictions: ", snapshot.val());
