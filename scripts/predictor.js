@@ -87,39 +87,33 @@ function displayDateMenu() {
     dateMenuContainer.scrollTo(0, 0); // Start scrolled to the beginning
 }
 
-// Display games for the selected date
-function displayGamesByDate(selectedDate) {
-    const gamesForDate = Object.values(scheduleData).filter(game => game.DateTime.startsWith(selectedDate));
+// Display the games for the selected date
+function displayGamesByDate(games, teams) {
+    const gameTableBody = document.getElementById("gameTableBody");
+    gameTableBody.innerHTML = ""; // Clear any existing rows
 
-    console.log(`Games for Date: ${selectedDate}`, gamesForDate);
+    games.forEach(game => {
+        const homeTeam = teams.find(team => team.TeamID === game.HomeTeamID);
+        const awayTeam = teams.find(team => team.TeamID === game.AwayTeamID);
 
-    if (!Array.isArray(gamesForDate) || gamesForDate.length === 0) {
-        console.error('No games found for the selected date:', selectedDate);
-        return;
-    }
+        const homeTeamName = homeTeam ? homeTeam.Name : "Unknown Home Team";
+        const awayTeamName = awayTeam ? awayTeam.Name : "Unknown Away Team";
 
-    const gameTableBody = document.getElementById('gameTableBody');
-    gameTableBody.innerHTML = ''; // Clear previous rows
+        const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : "Unknown Home Team Logo";
+        const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : "Unknown Away Team Logo";
 
-    gamesForDate.forEach((game) => {
-        const homeTeamID = game.HomeTeamID;
-        const awayTeamID = game.AwayTeamID;
+        const row = document.createElement("tr");
+        
+        row.innerHTML = `
+            <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
+            <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
+            <td><input type="checkbox" name="winner" value="${game.GameID}"></td>
+        `;
 
-        const homeTeam = teamsData[homeTeamID];
-        const awayTeam = teamsData[awayTeamID];
+        gameTableBody.appendChild(row);
+    });
+}
 
-        if (!homeTeam || !awayTeam) {
-            console.error(`Team data not found for Game ID: ${game.GameID}`);
-            return;
-        }
-
-        const homeTeamLogo = homeTeam.WikipediaLogoUrl || 'default_logo_url';
-        const awayTeamLogo = awayTeam.WikipediaLogoUrl || 'default_logo_url';
-
-        const homeTeamName = homeTeam.Name || 'Unknown Team';
-        const awayTeamName = awayTeam.Name || 'Unknown Team';
-
-        const row = document.createElement('tr');
 
         // Check if user already made a prediction for this game
         const previousPrediction = userPredictions[game.GameID];
