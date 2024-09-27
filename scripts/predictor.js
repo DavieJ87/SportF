@@ -16,7 +16,6 @@ const database = firebase.database();
 let user = null;
 let teamsData = {}; // Store teams information
 let scheduleData = {}; // Store schedule data
-let userPredictions = {}; // Store the user's predictions
 
 // Google Authentication
 firebase.auth().onAuthStateChanged(function (authenticatedUser) {
@@ -24,7 +23,6 @@ firebase.auth().onAuthStateChanged(function (authenticatedUser) {
         user = authenticatedUser;
         document.getElementById('user-info').textContent = `Logged in as ${user.displayName}`;
         loadTeamsData(); // Load the teams data once user is authenticated
-        loadUserPredictions(); // Load user's previous predictions if they exist
     } else {
         // Redirect to login page if not authenticated
         window.location.href = 'login.html';
@@ -51,15 +49,6 @@ function loadScheduleData() {
     });
 }
 
-// Load user's previous predictions from Firebase
-function loadUserPredictions() {
-    const userPredictionsRef = database.ref(`predictions/${user.uid}`);
-    userPredictionsRef.once('value', (snapshot) => {
-        userPredictions = snapshot.val() || {};
-        console.log('User Predictions:', userPredictions);
-    });
-}
-
 // Display the date selection menu
 function displayDateMenu() {
     const dates = new Set(); // Use Set to store unique dates
@@ -69,28 +58,19 @@ function displayDateMenu() {
     });
 
     const dateMenuContainer = document.getElementById('dateMenuContainer');
-    dateMenuContainer.innerHTML = ''; // Clear previous content
-
-    // Convert set to array for easier slicing
-    const dateArray = Array.from(dates);
-
-    dateArray.forEach((date) => {
+    dates.forEach((date) => {
         const button = document.createElement('button');
         button.textContent = date;
         button.addEventListener('click', () => displayGamesByDate(date));
         dateMenuContainer.appendChild(button);
     });
-
-    // Allow horizontal scrolling and display only 3 dates at a time
-    dateMenuContainer.style.overflowX = 'auto';
-    dateMenuContainer.style.whiteSpace = 'nowrap';
-    dateMenuContainer.scrollTo(0, 0); // Start scrolled to the beginning
 }
 
 // Display games for the selected date
 function displayGamesByDate(selectedDate) {
     const gamesForDate = Object.values(scheduleData).filter(game => game.DateTime.startsWith(selectedDate));
 
+    // Log match data for debugging
     console.log(`Games for Date: ${selectedDate}`, gamesForDate);
 
     if (!Array.isArray(gamesForDate) || gamesForDate.length === 0) {
@@ -105,31 +85,36 @@ function displayGamesByDate(selectedDate) {
         const homeTeamID = game.HomeTeamID;
         const awayTeamID = game.AwayTeamID;
 
+        // Fetch team data from teamsData using the HomeTeamID and AwayTeamID
         const homeTeam = teamsData[homeTeamID];
         const awayTeam = teamsData[awayTeamID];
 
+        // Log team mapping details for debugging
+        console.log(`Game ID: ${game.GameID} - Home Team ID: ${homeTeamID}, Away Team ID: ${awayTeamID}`);
+        console.log(`Mapped Home Team: ${homeTeam ? homeTeam.Name : 'Unknown'} (${homeTeamID}), Away Team: ${awayTeam ? awayTeam.Name : 'Unknown'} (${awayTeamID})`);
+
+        // Ensure that the team data exists
         if (!homeTeam || !awayTeam) {
             console.error(`Team data not found for Game ID: ${game.GameID}`);
             return;
         }
 
+        // Ensure we have valid data for team names and logos
         const homeTeamLogo = homeTeam.WikipediaLogoUrl || 'default_logo_url';
         const awayTeamLogo = awayTeam.WikipediaLogoUrl || 'default_logo_url';
 
         const homeTeamName = homeTeam.Name || 'Unknown Team';
         const awayTeamName = awayTeam.Name || 'Unknown Team';
 
+        // Create a new row in the table for each game
         const row = document.createElement('tr');
-
-        // Check if user already made a prediction for this game
-        const previousPrediction = userPredictions[game.GameID];
 
         row.innerHTML = `
             <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
             <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
             <td>
-                <input type="radio" name="game-${game.GameID}" value="away" data-game-id="${game.GameID}" ${previousPrediction === 'away' ? 'checked' : ''}> Away Win
-                <input type="radio" name="game-${game.GameID}" value="home" data-game-id="${game.GameID}" ${previousPrediction === 'home' ? 'checked' : ''}> Home Win
+                <input type="radio" name="game-${game.GameID}" value="away" data-game-id="${game.GameID}"> Away Win
+                <input type="radio" name="game-${game.GameID}" value="home" data-game-id="${game.GameID}"> Home Win
             </td>
         `;
 
