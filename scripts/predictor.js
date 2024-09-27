@@ -8,86 +8,39 @@ const firebaseConfig = {
     messagingSenderId: "523775447476",
     appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
 };
-
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-const database = firebase.database();
 
-let user = null;
-let teamsData = {}; // Store teams information
-let scheduleData = {}; // Store schedule data
-let userPredictions = {}; // Store the user's predictions
+// Variables
+let teams = [];
+let gamesByDate = {};
 
-// Google Authentication
-firebase.auth().onAuthStateChanged(function (authenticatedUser) {
-    if (authenticatedUser) {
-        user = authenticatedUser;
-        document.getElementById('user-info').textContent = `Logged in as ${user.displayName}`;
-        loadTeamsData(); // Load the teams data once user is authenticated
-        loadUserPredictions(); // Load user's previous predictions if they exist
-    } else {
-        // Redirect to login page if not authenticated
-        window.location.href = 'login.html';
-    }
-});
-
-// Load teams data from Firebase
-function loadTeamsData() {
-    const teamsRef = database.ref('nba/teams');
-    teamsRef.once('value', (snapshot) => {
-        teamsData = snapshot.val();
-        console.log('Teams Data:', teamsData);
-        loadScheduleData(); // Load schedule data after teams are loaded
-    });
+// Function to fetch teams data
+function fetchTeams() {
+    return firebase.database().ref('nba/teams').once('value')
+        .then(snapshot => snapshot.val());
 }
 
-// Load schedule data from Firebase
-function loadScheduleData() {
-    const scheduleRef = database.ref('nba/season_2024');
-    scheduleRef.once('value', (snapshot) => {
-        scheduleData = snapshot.val();
-        console.log('Schedule Data:', scheduleData);
-        displayDateMenu(); // Display the date selection menu after schedule is loaded
-    });
+// Function to fetch schedule data
+function fetchSchedule() {
+    return firebase.database().ref('nba/season_2024').once('value')
+        .then(snapshot => snapshot.val());
 }
 
-// Load user's previous predictions from Firebase
-function loadUserPredictions() {
-    const userPredictionsRef = database.ref(`predictions/${user.uid}`);
-    userPredictionsRef.once('value', (snapshot) => {
-        userPredictions = snapshot.val() || {};
-        console.log('User Predictions:', userPredictions);
-    });
-}
+// Function to display dates in the scrolling menu
+function displayDateMenu(dates) {
+    const dateMenuContainer = document.getElementById("dateMenuContainer");
+    dateMenuContainer.innerHTML = ''; // Clear any existing dates
 
-// Display the date selection menu
-function displayDateMenu() {
-    const dates = new Set(); // Use Set to store unique dates
-    Object.values(scheduleData).forEach((game) => {
-        const gameDate = game.DateTime.split('T')[0]; // Extract the date from DateTime
-        dates.add(gameDate);
-    });
-
-    const dateMenuContainer = document.getElementById('dateMenuContainer');
-    dateMenuContainer.innerHTML = ''; // Clear previous content
-
-    // Convert set to array for easier slicing
-    const dateArray = Array.from(dates);
-
-    dateArray.forEach((date) => {
+    // Show only first 3 dates
+    dates.slice(0, 3).forEach(date => {
         const button = document.createElement('button');
-        button.textContent = date;
-        button.addEventListener('click', () => displayGamesByDate(date));
+        button.textContent = new Date(date).toLocaleDateString();
+        button.addEventListener('click', () => displayGamesByDate(gamesByDate[date], teams));
         dateMenuContainer.appendChild(button);
     });
-
-    // Allow horizontal scrolling and display only 3 dates at a time
-    dateMenuContainer.style.overflowX = 'auto';
-    dateMenuContainer.style.whiteSpace = 'nowrap';
-    dateMenuContainer.scrollTo(0, 0); // Start scrolled to the beginning
 }
 
-// Display the games for the selected date
+// Function to display games for a selected date
 function displayGamesByDate(games, teams) {
     const gameTableBody = document.getElementById("gameTableBody");
     gameTableBody.innerHTML = ""; // Clear any existing rows
@@ -99,11 +52,11 @@ function displayGamesByDate(games, teams) {
         const homeTeamName = homeTeam ? homeTeam.Name : "Unknown Home Team";
         const awayTeamName = awayTeam ? awayTeam.Name : "Unknown Away Team";
 
-        const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : "Unknown Home Team Logo";
-        const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : "Unknown Away Team Logo";
+        const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : "";
+        const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : "";
 
         const row = document.createElement("tr");
-        
+
         row.innerHTML = `
             <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
             <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
@@ -112,43 +65,64 @@ function displayGamesByDate(games, teams) {
 
         gameTableBody.appendChild(row);
     });
+
+    document.getElementById("gameTable").classList.remove("hidden");
 }
 
-
-        // Check if user already made a prediction for this game
-        const previousPrediction = userPredictions[game.GameID];
-
-        row.innerHTML = `
-            <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
-            <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
-            <td>
-                <input type="radio" name="game-${game.GameID}" value="away" data-game-id="${game.GameID}" ${previousPrediction === 'away' ? 'checked' : ''}> Away Win
-                <input type="radio" name="game-${game.GameID}" value="home" data-game-id="${game.GameID}" ${previousPrediction === 'home' ? 'checked' : ''}> Home Win
-            </td>
-        `;
-
-        gameTableBody.appendChild(row);
-    });
-
-    document.getElementById('gameTable').classList.remove('hidden');
+// Function to save predictions to Firebase
+function savePredictions(predictions) {
+    const userId = firebase.auth().currentUser.uid;
+    firebase.database().ref(`predictions/${userId}`).push(predictions)
+        .then(() => console.log("Predictions saved successfully"))
+        .catch(error => console.error("Error saving predictions:", error));
 }
 
-// Submit the predictions to Firebase
-document.getElementById('submitBtn').addEventListener('click', () => {
-    const predictions = {};
-    document.querySelectorAll('input[type="radio"]:checked').forEach((input) => {
-        const gameID = input.getAttribute('data-game-id');
-        predictions[gameID] = input.value;
-    });
+// Function to load existing predictions
+function loadPredictions() {
+    const userId = firebase.auth().currentUser.uid;
+    return firebase.database().ref(`predictions/${userId}`).once('value')
+        .then(snapshot => snapshot.val() || {});
+}
 
-    if (user) {
-        const userPredictionsRef = database.ref(`predictions/${user.uid}`);
-        userPredictionsRef.set(predictions, (error) => {
-            if (error) {
-                console.error('Error saving predictions:', error);
-            } else {
-                alert('Predictions saved successfully!');
-            }
-        });
-    }
+// Function to handle submission of predictions
+document.getElementById("submitBtn").addEventListener("click", () => {
+    const checkboxes = document.querySelectorAll('input[name="winner"]:checked');
+    const predictions = Array.from(checkboxes).map(checkbox => checkbox.value);
+    savePredictions(predictions);
 });
+
+// Function to initialize the app
+function init() {
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            console.log("User ID:", user.uid); // Ensure the user ID is logged
+            
+            // Load teams and schedule data
+            Promise.all([fetchTeams(), fetchSchedule(), loadPredictions()])
+                .then(([teamsData, scheduleData, userPredictions]) => {
+                    teams = teamsData;
+
+                    // Group games by date
+                    gamesByDate = {};
+                    scheduleData.forEach(game => {
+                        const date = game.DateTime.split('T')[0];
+                        if (!gamesByDate[date]) gamesByDate[date] = [];
+                        gamesByDate[date].push(game);
+                    });
+
+                    const dates = Object.keys(gamesByDate);
+                    displayDateMenu(dates); // Display the date selection menu
+
+                    console.log("Schedule and Teams Data Loaded");
+                })
+                .catch(error => {
+                    console.error("Error loading data:", error);
+                });
+        } else {
+            console.log("User is not signed in.");
+        }
+    });
+}
+
+// Initialize the app
+window.onload = init;
