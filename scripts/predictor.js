@@ -74,19 +74,17 @@ function displayDateMenu() {
     // Convert set to array for easier slicing
     const dateArray = Array.from(dates);
 
-    // Only display 3 dates at a time
-    dateArray.slice(0, 3).forEach((date) => {
+    dateArray.forEach((date) => {
         const button = document.createElement('button');
         button.textContent = date;
         button.addEventListener('click', () => displayGamesByDate(date));
         dateMenuContainer.appendChild(button);
     });
 
-    // Make the date menu horizontally scrollable with hidden scrollbar
-    dateMenuContainer.style.overflowX = 'scroll';
+    // Allow horizontal scrolling and display only 3 dates at a time
+    dateMenuContainer.style.overflowX = 'auto';
     dateMenuContainer.style.whiteSpace = 'nowrap';
-    dateMenuContainer.style.scrollbarWidth = 'none'; // Hide scrollbar (Firefox)
-    dateMenuContainer.style.msOverflowStyle = 'none'; // Hide scrollbar (IE 10+)
+    dateMenuContainer.scrollTo(0, 0); // Start scrolled to the beginning
 }
 
 // Display games for the selected date
