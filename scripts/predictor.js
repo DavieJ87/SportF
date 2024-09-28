@@ -58,14 +58,6 @@ function loadScheduleData() {
     }).catch(error => console.error("Error loading schedule:", error));
 }
 
-// Function to convert teamID to team data from teamsData
-function getTeamData(teamID) {
-    if (teamsData && teamsData[teamID]) {
-        return teamsData[teamID];
-    }
-    return { TeamName: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
-}
-
 // Display date menu for selecting games
 function displayDateMenu(schedule) {
     const dateMenuContainer = document.getElementById('dateMenuContainer');
@@ -128,8 +120,8 @@ function displayGamesByDate(games) {
     gameTableBody.innerHTML = ''; // Clear previous rows
 
     games.forEach((game) => {
-        const homeTeam = teamsData[game.HomeTeamID];
-        const awayTeam = teamsData[game.AwayTeamID];
+        const homeTeam = teamsData[game.HomeTeamID]; // Assuming this is a teamID reference
+        const awayTeam = teamsData[game.AwayTeamID]; // Assuming this is a teamID reference
 
         // Handle cases where team data is missing
         const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url.png';
