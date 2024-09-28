@@ -120,8 +120,12 @@ function displayGamesByDate(games) {
     gameTableBody.innerHTML = ''; // Clear previous rows
 
     games.forEach((game) => {
-        const homeTeam = teamsData[game.HomeTeamID]; // Assuming this is a teamID reference
-        const awayTeam = teamsData[game.AwayTeamID]; // Assuming this is a teamID reference
+        // Convert HomeTeamID and AwayTeamID into teamID to fetch team data
+        const homeTeamID = game.HomeTeamID; // Already matches teamID
+        const awayTeamID = game.AwayTeamID; // Already matches teamID
+
+        const homeTeam = teamsData[homeTeamID]; // Get home team data using teamID
+        const awayTeam = teamsData[awayTeamID]; // Get away team data using teamID
 
         // Handle cases where team data is missing
         const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url.png';
