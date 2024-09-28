@@ -15,140 +15,118 @@ const auth = firebase.auth();
 const db = firebase.database();
 
 let currentUser = null;
-let teams = {};
-let schedule = {};
+let teamsData = {};
+let scheduleData = [];
 
 // Wait for authentication
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
         document.getElementById("user-info").innerText = `Hello, ${user.displayName}`;
-        loadTeams();
+        loadTeamsData();
     } else {
         console.log("User is not authenticated, redirecting to login.");
         window.location.href = 'login.html';
     }
 });
 
-// Load teams
-function loadTeams() {
+// Load NBA teams data
+function loadTeamsData() {
     const teamsRef = db.ref('nba/teams');
     teamsRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
-            teams = snapshot.val();
-            console.log("Teams loaded:", teams);
-            loadSchedule();
+            teamsData = snapshot.val();
+            console.log("Teams data loaded:", teamsData);
+            loadScheduleData();
         } else {
             console.error("No teams data found");
         }
     }).catch(error => console.error("Error loading teams:", error));
 }
 
-// Load schedule and display date scroller
-function loadSchedule() {
+// Load NBA schedule data
+function loadScheduleData() {
     const scheduleRef = db.ref('nba/season_2024');
     scheduleRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
-            schedule = snapshot.val();
-            console.log("Schedule loaded:", schedule);
-            displayDateMenu();
+            scheduleData = Object.values(snapshot.val());
+            console.log("Schedule data loaded:", scheduleData);
+            displayDateMenu(scheduleData);
         } else {
             console.error("No schedule data found");
         }
     }).catch(error => console.error("Error loading schedule:", error));
 }
 
-// Display date menu
-function displayDateMenu() {
-    const dates = Object.keys(schedule).sort();
-    const dateScroller = document.getElementById('dateScroller');
-    
-    dateScroller.innerHTML = ""; // Clear previous dates
-    
-    dates.forEach(date => {
+// Display date menu for selecting games
+function displayDateMenu(schedule) {
+    const dateMenuContainer = document.getElementById('dateMenuContainer');
+    dateMenuContainer.innerHTML = ''; // Clear previous buttons
+
+    const uniqueDates = [...new Set(schedule.map(game => game.DateTime.split('T')[0]))]; // Extract unique dates
+
+    uniqueDates.forEach(date => {
         const dateButton = document.createElement('button');
-        dateButton.textContent = date; // Make sure the date is formatted correctly
-        dateButton.addEventListener('click', () => displayGamesByDate(date));
-        dateScroller.appendChild(dateButton);
+        dateButton.textContent = date;
+        dateButton.addEventListener('click', () => {
+            const gamesForDate = schedule.filter(game => game.DateTime.startsWith(date));
+            displayGamesByDate(gamesForDate);
+        });
+        dateMenuContainer.appendChild(dateButton);
     });
-
-    // Attach event listeners for arrows
-    document.getElementById("leftArrow").addEventListener('click', scrollDatesLeft);
-    document.getElementById("rightArrow").addEventListener('click', scrollDatesRight);
-
-    // Show only 3 dates at a time
-    scrollDates(0);
 }
 
-// Scroll dates (helper)
-let currentIndex = 0;
-function scrollDates(index) {
-    const dates = document.querySelectorAll('#dateScroller button');
-    dates.forEach((btn, i) => {
-        btn.style.display = (i >= index && i < index + 3) ? 'inline-block' : 'none';
-    });
-    currentIndex = index;
-}
-
-function scrollDatesLeft() {
-    if (currentIndex > 0) {
-        scrollDates(currentIndex - 1);
-    }
-}
-
-function scrollDatesRight() {
-    const dates = document.querySelectorAll('#dateScroller button');
-    if (currentIndex + 3 < dates.length) {
-        scrollDates(currentIndex + 1);
-    }
-}
-
-// Display games by date
-function displayGamesByDate(date) {
+// Display games for the selected date
+function displayGamesByDate(games) {
     const gameTableBody = document.getElementById('gameTableBody');
-    gameTableBody.innerHTML = ''; // Clear previous games
+    gameTableBody.innerHTML = ''; // Clear previous rows
 
-    const games = schedule[date];
-    
-    if (!games) {
-        console.error(`No games found for date ${date}`);
-        return;
-    }
+    games.forEach((game) => {
+        const homeTeam = teamsData[game.HomeTeamID];
+        const awayTeam = teamsData[game.AwayTeamID];
 
-    const gamesArray = Object.values(games); // Ensure we are working with an array
+        // Handle cases where team data is missing
+        const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url.png';
+        const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : 'default_logo_url.png';
 
-    gamesArray.forEach(game => {
-        const awayTeam = teams[game.awayTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
-        const homeTeam = teams[game.homeTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
+        const homeTeamName = homeTeam ? homeTeam.TeamName : 'Unknown Team';
+        const awayTeamName = awayTeam ? awayTeam.TeamName : 'Unknown Team';
 
-        // Log the game details for debugging
-        console.log("Game data:", game);
-        console.log("Away team data:", awayTeam);
-        console.log("Home team data:", homeTeam);
+        console.log('Game data:', game);
+        console.log('Home Team:', homeTeam);
+        console.log('Away Team:', awayTeam);
 
+        // Create a new row in the table for each game
         const row = document.createElement('tr');
+
         row.innerHTML = `
-            <td><img src="${awayTeam.WikipediaLogoUrl}" alt="Away Team Logo" width="50">${awayTeam.Name}</td>
-            <td><img src="${homeTeam.WikipediaLogoUrl}" alt="Home Team Logo" width="50">${homeTeam.Name}</td>
-            <td><input type="checkbox" class="winnerCheckbox"></td>
+            <td><img src="${awayTeamLogo}" alt="${awayTeamName} logo" width="50"> ${awayTeamName}</td>
+            <td><img src="${homeTeamLogo}" alt="${homeTeamName} logo" width="50"> ${homeTeamName}</td>
+            <td>
+                <input type="checkbox" data-game-id="${game.GameID}" data-pick="away"> Away Win
+                <input type="checkbox" data-game-id="${game.GameID}" data-pick="home"> Home Win
+            </td>
         `;
+
         gameTableBody.appendChild(row);
     });
 
     document.getElementById('gameTable').classList.remove('hidden');
 }
 
-// Handle submission
-document.getElementById('submitBtn').addEventListener('click', submitPredictions);
+// Submit predictions
+document.getElementById('submitBtn').addEventListener('click', () => {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+    const predictions = {};
 
-function submitPredictions() {
-    const checkboxes = document.querySelectorAll('.winnerCheckbox');
-    const predictions = Array.from(checkboxes).map(cb => cb.checked);
+    checkboxes.forEach(checkbox => {
+        const gameID = checkbox.dataset.gameId;
+        const pick = checkbox.dataset.pick;
+        predictions[gameID] = pick;
+    });
 
     const predictionsRef = db.ref(`predictions/${currentUser.uid}`);
-    predictionsRef.set(predictions).then(() => {
-        alert("Predictions submitted successfully");
-    }).catch(error => {
-        console.error("Error submitting predictions:", error);
-    });
-}
+    predictionsRef.set(predictions)
+        .then(() => alert("Predictions submitted successfully"))
+        .catch(error => console.error("Error submitting predictions:", error));
+});
