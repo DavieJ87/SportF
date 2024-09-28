@@ -36,6 +36,7 @@ function loadTeams() {
     teamsRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
             teams = snapshot.val();
+            console.log("Teams loaded:", teams);
             loadSchedule();
         } else {
             console.error("No teams data found");
@@ -49,6 +50,7 @@ function loadSchedule() {
     scheduleRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
             schedule = snapshot.val();
+            console.log("Schedule loaded:", schedule);
             displayDateMenu();
         } else {
             console.error("No schedule data found");
@@ -60,14 +62,17 @@ function loadSchedule() {
 function displayDateMenu() {
     const dates = Object.keys(schedule).sort();
     const dateScroller = document.getElementById('dateScroller');
-
+    
+    dateScroller.innerHTML = ""; // Clear previous dates
+    
     dates.forEach(date => {
         const dateButton = document.createElement('button');
-        dateButton.textContent = date;
+        dateButton.textContent = date; // Make sure the date is formatted correctly
         dateButton.addEventListener('click', () => displayGamesByDate(date));
         dateScroller.appendChild(dateButton);
     });
 
+    // Attach event listeners for arrows
     document.getElementById("leftArrow").addEventListener('click', scrollDatesLeft);
     document.getElementById("rightArrow").addEventListener('click', scrollDatesRight);
 
@@ -109,36 +114,20 @@ function displayGamesByDate(date) {
         console.error(`No games found for date ${date}`);
         return;
     }
-    
+
     const gamesArray = Object.values(games); // Ensure we are working with an array
 
     gamesArray.forEach(game => {
-        const awayTeam = teams[game.AwayTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
-        const homeTeam = teams[game.HomeTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
+        const awayTeam = teams[game.awayTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
+        const homeTeam = teams[game.homeTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
+
+        // Log the game details for debugging
+        console.log("Game data:", game);
+        console.log("Away team data:", awayTeam);
+        console.log("Home team data:", homeTeam);
 
         const row = document.createElement('tr');
         row.innerHTML = `
             <td><img src="${awayTeam.WikipediaLogoUrl}" alt="Away Team Logo" width="50">${awayTeam.Name}</td>
             <td><img src="${homeTeam.WikipediaLogoUrl}" alt="Home Team Logo" width="50">${homeTeam.Name}</td>
-            <td><input type="checkbox" class="winnerCheckbox"></td>
-        `;
-        gameTableBody.appendChild(row);
-    });
-
-    document.getElementById('gameTable').classList.remove('hidden');
-}
-
-// Handle submission
-document.getElementById('submitBtn').addEventListener('click', submitPredictions);
-
-function submitPredictions() {
-    const checkboxes = document.querySelectorAll('.winnerCheckbox');
-    const predictions = Array.from(checkboxes).map(cb => cb.checked);
-
-    const predictionsRef = db.ref(`predictions/${currentUser.uid}`);
-    predictionsRef.set(predictions).then(() => {
-        alert("Predictions submitted successfully");
-    }).catch(error => {
-        console.error("Error submitting predictions:", error);
-    });
-}
+           
