@@ -3,64 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NBA Predictor</title>
-    <link rel="stylesheet" href="styles.css">
-    <!-- Firebase SDK -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
-      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
-      import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-database.js";
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
-        authDomain: "sportf-8c772.firebaseapp.com",
-        databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
-        projectId: "sportf-8c772",
-        storageBucket: "sportf-8c772.appspot.com",
-        messagingSenderId: "523775447476",
-        appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
-      };
-
-      // Initialize Firebase
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth();
-      const db = getDatabase(app);
-      
-      export { auth, db, ref, get, set, onAuthStateChanged };
-    </script>
-    <script src="predictor.js" defer></script>
+    <title>NBA Game Predictor</title>
+    <link rel="stylesheet" href="styles/styles.css">
+    <!-- Firebase SDKs in compatibility mode -->
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
 </head>
 <body>
     <header>
         <h1>NBA Game Predictor</h1>
-        <div id="user-info"></div>
+        <div id="user-info">Loading...</div>
     </header>
-
+    
     <main>
-        <!-- Date Menu -->
-        <div id="dateMenuContainer">
-            <!-- Date navigation buttons and scrolling dates will be appended here -->
+        <div id="dateMenuContainer" class="date-scroller">
+            <button id="leftArrow" class="arrow">&lt;</button>
+            <div id="dateScroller" class="date-list"></div>
+            <button id="rightArrow" class="arrow">&gt;</button>
         </div>
 
         <!-- Game Table -->
-        <table id="gameTable" class="hidden">
-            <thead>
-                <tr>
-                    <th>Away Team</th>
-                    <th>Home Team</th>
-                    <th>Predictions</th>
-                </tr>
-            </thead>
-            <tbody id="gameTableBody">
-                <!-- Games will be populated here -->
-            </tbody>
-        </table>
+        <div id="gameTable" class="game-table hidden">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Away Team</th>
+                        <th>Home Team</th>
+                        <th>Select Winner</th>
+                    </tr>
+                </thead>
+                <tbody id="gameTableBody"></tbody>
+            </table>
+        </div>
 
-        <button id="submitBtn">Submit Predictions</button>
+        <!-- Submit button -->
+        <button id="submitBtn">Submit</button>
     </main>
 
-    <footer>
-        <p>&copy; 2024 NBA Predictor</p>
-    </footer>
+    <!-- JavaScript for the page -->
+    <script src="scripts/predictor.js"></script>
 </body>
 </html>
