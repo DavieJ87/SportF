@@ -1,6 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
-import { getDatabase, ref, get, set, child } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
+import { getAuth, onAuthStateChanged, signInWithRedirect, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
+import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -26,8 +26,16 @@ const submitBtn = document.getElementById('submitBtn');
 const scrollLeft = document.getElementById('scrollLeft');
 const scrollRight = document.getElementById('scrollRight');
 
+// Google Sign-In provider
+const provider = new GoogleAuthProvider();
+
+// Function to handle sign-in
+function handleSignIn() {
+    signInWithRedirect(auth, provider);
+}
+
 // Fetch data from Firebase and populate the date menu and game table
-function loadNBAData() {
+function loadNBAData(user) {
     const seasonRef = ref(db, 'nba/season_2024');
     get(seasonRef).then((snapshot) => {
         if (snapshot.exists()) {
@@ -109,16 +117,13 @@ function getTeamName(teamID) {
     return teams[teamID] || 'Unknown Team';
 }
 
-// Handle submit button click to save predictions
-submitBtn.addEventListener('click', () => {
-    // Logic to save predictions
-});
-
-// Load data on page load
+// Check if user is authenticated
 onAuthStateChanged(auth, user => {
     if (user) {
-        loadNBAData();
+        console.log("User is authenticated:", user);
+        loadNBAData(user);
     } else {
-        console.error('User is not authenticated');
+        console.error("User is not authenticated, redirecting to login.");
+        handleSignIn();
     }
 });
