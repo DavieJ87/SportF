@@ -1,17 +1,28 @@
-import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-auth.js";
+// Firebase config
+const firebaseConfig = {
+    apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
+    authDomain: "sportf-8c772.firebaseapp.com",
+    databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
+    projectId: "sportf-8c772",
+    storageBucket: "sportf-8c772.appspot.com",
+    messagingSenderId: "523775447476",
+    appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
+};
 
-const db = getDatabase();
-const auth = getAuth();
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
 
 let currentUser = null;
 let teams = {};
 let schedule = {};
 
 // Wait for authentication
-onAuthStateChanged(auth, (user) => {
+auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
+        document.getElementById("user-info").innerText = `Hello, ${user.displayName}`;
         loadTeams();
     } else {
         console.log("User is not authenticated, redirecting to login.");
@@ -21,8 +32,8 @@ onAuthStateChanged(auth, (user) => {
 
 // Load teams
 function loadTeams() {
-    const teamsRef = ref(db, 'nba/teams');
-    get(teamsRef).then(snapshot => {
+    const teamsRef = db.ref('nba/teams');
+    teamsRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
             teams = snapshot.val();
             loadSchedule();
@@ -34,8 +45,8 @@ function loadTeams() {
 
 // Load schedule and display date scroller
 function loadSchedule() {
-    const scheduleRef = ref(db, 'nba/season_2024');
-    get(scheduleRef).then(snapshot => {
+    const scheduleRef = db.ref('nba/season_2024');
+    scheduleRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
             schedule = snapshot.val();
             displayDateMenu();
@@ -116,8 +127,8 @@ function submitPredictions() {
     const checkboxes = document.querySelectorAll('.winnerCheckbox');
     const predictions = Array.from(checkboxes).map(cb => cb.checked);
 
-    const predictionsRef = ref(db, `predictions/${currentUser.uid}`);
-    set(predictionsRef, predictions).then(() => {
+    const predictionsRef = db.ref(`predictions/${currentUser.uid}`);
+    predictionsRef.set(predictions).then(() => {
         alert("Predictions submitted successfully");
     }).catch(error => {
         console.error("Error submitting predictions:", error);
