@@ -23,11 +23,14 @@ const db = getDatabase();
 let currentUser = null;
 let teams = {};
 let selectedDate = null;
+let allDates = [];
 
 // DOM Elements
 const dateMenuContainer = document.getElementById("dateMenuContainer");
 const gameTableBody = document.getElementById("gameTableBody");
 const submitBtn = document.getElementById("submitBtn");
+const leftArrow = document.getElementById("leftArrow");
+const rightArrow = document.getElementById("rightArrow");
 
 // Auth handling
 onAuthStateChanged(auth, (user) => {
@@ -36,7 +39,6 @@ onAuthStateChanged(auth, (user) => {
         document.getElementById("user-info").textContent = `Welcome, ${user.displayName}`;
         loadTeamsAndDates();
     } else {
-        // User is signed out
         signInWithPopup(auth, new GoogleAuthProvider());
     }
 });
@@ -55,8 +57,8 @@ function loadDates() {
     const seasonRef = ref(db, 'nba/season_2024');
     onValue(seasonRef, (snapshot) => {
         const schedule = snapshot.val();
-        const uniqueDates = new Set(Object.values(schedule).map(game => game.DateTime.split("T")[0]));
-        displayDateMenu(Array.from(uniqueDates));
+        allDates = Array.from(new Set(Object.values(schedule).map(game => game.DateTime.split("T")[0])));
+        displayDateMenu(allDates.slice(0, 3)); // Show first 3 dates initially
     });
 }
 
@@ -64,8 +66,7 @@ function loadDates() {
 function displayDateMenu(dates) {
     dateMenuContainer.innerHTML = ''; // Clear previous dates
 
-    // Limit to showing 3 dates and add scrolling
-    dates.slice(0, 3).forEach(date => {
+    dates.forEach(date => {
         const dateBtn = document.createElement('button');
         dateBtn.textContent = date;
         dateBtn.classList.add('date-btn');
@@ -73,6 +74,20 @@ function displayDateMenu(dates) {
         dateMenuContainer.appendChild(dateBtn);
     });
 }
+
+// Scroll date menu left
+leftArrow.addEventListener('click', () => {
+    const startIdx = allDates.indexOf(dateMenuContainer.querySelector('button').textContent);
+    const newDates = allDates.slice(Math.max(0, startIdx - 3), startIdx);
+    displayDateMenu(newDates);
+});
+
+// Scroll date menu right
+rightArrow.addEventListener('click', () => {
+    const startIdx = allDates.indexOf(dateMenuContainer.querySelector('button').textContent);
+    const newDates = allDates.slice(startIdx + 3, startIdx + 6);
+    displayDateMenu(newDates);
+});
 
 // Load games for a specific date
 function loadGamesByDate(date) {
