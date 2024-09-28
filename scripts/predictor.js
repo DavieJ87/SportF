@@ -1,87 +1,172 @@
-import { auth, database, onAuthStateChanged, signOut } from "./firebase-config.js";
-import { ref, get, set, update } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+// Import Firebase functions (SDK v9)
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-document.addEventListener("DOMContentLoaded", () => {
-  const userInfoDiv = document.getElementById("user-info");
-  const dateMenuContainer = document.getElementById("dateMenuContainer");
-  const gameTable = document.getElementById("gameTable");
-  const gameTableBody = document.getElementById("gameTableBody");
-  const submitBtn = document.getElementById("submitBtn");
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
+    authDomain: "sportf-8c772.firebaseapp.com",
+    databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
+    projectId: "sportf-8c772",
+    storageBucket: "sportf-8c772.appspot.com",
+    messagingSenderId: "523775447476",
+    appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
+};
 
-  let selectedDate = null;
-  let user = null;
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
+const db = getDatabase();
 
-  onAuthStateChanged(auth, (loggedInUser) => {
-    if (loggedInUser) {
-      user = loggedInUser;
-      userInfoDiv.innerHTML = `Welcome, ${user.displayName}`;
-      loadDates();
+// Variables to store data
+let currentUser = null;
+let teams = {};
+let selectedDate = null;
+
+// DOM Elements
+const dateMenuContainer = document.getElementById("dateMenuContainer");
+const gameTableBody = document.getElementById("gameTableBody");
+const submitBtn = document.getElementById("submitBtn");
+
+// Auth handling
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        document.getElementById("user-info").textContent = `Welcome, ${user.displayName}`;
+        loadTeamsAndDates();
     } else {
-      userInfoDiv.innerHTML = "User not logged in";
+        // User is signed out
+        signInWithPopup(auth, new GoogleAuthProvider());
     }
-  });
+});
 
-  function loadDates() {
-    // Load available dates (replace with real data logic)
-    const dates = ['2023-10-24', '2023-10-25', '2023-10-26'];
-    dates.forEach((date) => {
-      const dateBtn = document.createElement("button");
-      dateBtn.textContent = date;
-      dateBtn.addEventListener("click", () => {
-        selectedDate = date;
-        loadGamesByDate(selectedDate);
-      });
-      dateMenuContainer.appendChild(dateBtn);
+// Load teams and schedule dates
+function loadTeamsAndDates() {
+    const teamsRef = ref(db, 'nba/teams');
+    onValue(teamsRef, (snapshot) => {
+        teams = snapshot.val();
+        loadDates();
     });
-  }
+}
 
-  function loadGamesByDate(date) {
-    gameTableBody.innerHTML = ""; // Clear the table before displaying new data
-    gameTable.classList.remove("hidden");
-
-    // Fetch games for the selected date (replace with real data logic)
-    const games = [
-      { awayTeamID: 29, homeTeamID: 26, gameID: 19594 },
-      { awayTeamID: 5, homeTeamID: 17, gameID: 19605 }
-    ];
-
-    games.forEach((game) => {
-      const row = document.createElement("tr");
-
-      const awayTeamCell = document.createElement("td");
-      const homeTeamCell = document.createElement("td");
-      const winnerCell = document.createElement("td");
-
-      // Retrieve team names and logos from Firebase database (real logic)
-      get(ref(database, `nba/teams/${game.awayTeamID}`)).then((snapshot) => {
-        if (snapshot.exists()) {
-          awayTeamCell.innerHTML = `<img src="${snapshot.val().WikipediaLogoUrl}" alt="Logo"> ${snapshot.val().TeamName}`;
-        } else {
-          awayTeamCell.textContent = "Unknown Away Team";
-        }
-      });
-
-      get(ref(database, `nba/teams/${game.homeTeamID}`)).then((snapshot) => {
-        if (snapshot.exists()) {
-          homeTeamCell.innerHTML = `<img src="${snapshot.val().WikipediaLogoUrl}" alt="Logo"> ${snapshot.val().TeamName}`;
-        } else {
-          homeTeamCell.textContent = "Unknown Home Team";
-        }
-      });
-
-      const winnerSelect = document.createElement("input");
-      winnerSelect.type = "checkbox";
-      winnerCell.appendChild(winnerSelect);
-
-      row.appendChild(awayTeamCell);
-      row.appendChild(homeTeamCell);
-      row.appendChild(winnerCell);
-      gameTableBody.appendChild(row);
+// Load available game dates
+function loadDates() {
+    const seasonRef = ref(db, 'nba/season_2024');
+    onValue(seasonRef, (snapshot) => {
+        const schedule = snapshot.val();
+        const uniqueDates = new Set(Object.values(schedule).map(game => game.DateTime.split("T")[0]));
+        displayDateMenu(Array.from(uniqueDates));
     });
-  }
+}
 
-  submitBtn.addEventListener("click", () => {
-    // Handle prediction submission logic here
-    alert("Prediction Submitted!");
-  });
+// Display date selection menu
+function displayDateMenu(dates) {
+    dateMenuContainer.innerHTML = ''; // Clear previous dates
+
+    // Limit to showing 3 dates and add scrolling
+    dates.slice(0, 3).forEach(date => {
+        const dateBtn = document.createElement('button');
+        dateBtn.textContent = date;
+        dateBtn.classList.add('date-btn');
+        dateBtn.addEventListener('click', () => loadGamesByDate(date));
+        dateMenuContainer.appendChild(dateBtn);
+    });
+}
+
+// Load games for a specific date
+function loadGamesByDate(date) {
+    const seasonRef = ref(db, 'nba/season_2024');
+    onValue(seasonRef, (snapshot) => {
+        const schedule = snapshot.val();
+        const games = Object.values(schedule).filter(game => game.DateTime.startsWith(date));
+        displayGames(games);
+    });
+}
+
+// Display games in the table
+function displayGames(games) {
+    gameTableBody.innerHTML = ''; // Clear previous games
+
+    games.forEach(game => {
+        const homeTeam = teams[game.HomeTeamID];
+        const awayTeam = teams[game.AwayTeamID];
+
+        if (!homeTeam || !awayTeam) {
+            console.error('Unknown team data for game:', game);
+            return;
+        }
+
+        const row = document.createElement('tr');
+
+        // Away team
+        const awayTeamCell = document.createElement('td');
+        const awayLogo = document.createElement('img');
+        awayLogo.src = awayTeam.WikipediaLogoUrl || 'unknown_logo.png';
+        awayLogo.alt = awayTeam.Name || 'Unknown Team';
+        awayLogo.classList.add('team-logo');
+        awayTeamCell.appendChild(awayLogo);
+        awayTeamCell.appendChild(document.createTextNode(awayTeam.Name || 'Unknown Team'));
+        row.appendChild(awayTeamCell);
+
+        // Home team
+        const homeTeamCell = document.createElement('td');
+        const homeLogo = document.createElement('img');
+        homeLogo.src = homeTeam.WikipediaLogoUrl || 'unknown_logo.png';
+        homeLogo.alt = homeTeam.Name || 'Unknown Team';
+        homeLogo.classList.add('team-logo');
+        homeTeamCell.appendChild(homeLogo);
+        homeTeamCell.appendChild(document.createTextNode(homeTeam.Name || 'Unknown Team'));
+        row.appendChild(homeTeamCell);
+
+        // Winner selection
+        const winnerCell = document.createElement('td');
+        const winnerSelect = document.createElement('select');
+        const optionNone = document.createElement('option');
+        optionNone.value = '';
+        optionNone.textContent = 'Select Winner';
+        winnerSelect.appendChild(optionNone);
+
+        const optionAway = document.createElement('option');
+        optionAway.value = 'away';
+        optionAway.textContent = awayTeam.Name;
+        winnerSelect.appendChild(optionAway);
+
+        const optionHome = document.createElement('option');
+        optionHome.value = 'home';
+        optionHome.textContent = homeTeam.Name;
+        winnerSelect.appendChild(optionHome);
+
+        winnerCell.appendChild(winnerSelect);
+        row.appendChild(winnerCell);
+
+        gameTableBody.appendChild(row);
+    });
+}
+
+// Handle predictions submission
+submitBtn.addEventListener('click', () => {
+    const predictions = [];
+    const rows = gameTableBody.querySelectorAll('tr');
+    
+    rows.forEach((row, index) => {
+        const winnerSelect = row.querySelector('select').value;
+        if (winnerSelect) {
+            predictions.push({
+                gameId: index,
+                winner: winnerSelect
+            });
+        }
+    });
+
+    if (predictions.length > 0 && currentUser) {
+        const userPredRef = ref(db, `predictions/${currentUser.uid}`);
+        set(userPredRef, predictions).then(() => {
+            alert('Predictions saved!');
+        }).catch((error) => {
+            console.error('Error saving predictions:', error);
+        });
+    } else {
+        alert('No predictions made or user not authenticated.');
+    }
 });
