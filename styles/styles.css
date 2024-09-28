@@ -108,3 +108,28 @@ button#submitBtn {
 button#submitBtn:hover {
     background-color: #218838;
 }
+
+
+#dateMenuContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dates-wrapper {
+    display: flex;
+    overflow: hidden;
+    width: 300px; /* Adjust based on how wide you want the date menu */
+    justify-content: space-between;
+}
+
+.date-button {
+    padding: 10px;
+    margin: 0 5px;
+    white-space: nowrap;
+    display: none;
+}
+
+button {
+    cursor: pointer;
+}
