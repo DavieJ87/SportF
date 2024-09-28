@@ -58,6 +58,14 @@ function loadScheduleData() {
     }).catch(error => console.error("Error loading schedule:", error));
 }
 
+// Function to convert teamID to team data from teamsData
+function getTeamData(teamID) {
+    if (teamsData && teamsData[teamID]) {
+        return teamsData[teamID];
+    }
+    return { TeamName: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
+}
+
 // Display date menu for selecting games
 function displayDateMenu(schedule) {
     const dateMenuContainer = document.getElementById('dateMenuContainer');
