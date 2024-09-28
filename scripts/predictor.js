@@ -130,4 +130,25 @@ function displayGamesByDate(date) {
         row.innerHTML = `
             <td><img src="${awayTeam.WikipediaLogoUrl}" alt="Away Team Logo" width="50">${awayTeam.Name}</td>
             <td><img src="${homeTeam.WikipediaLogoUrl}" alt="Home Team Logo" width="50">${homeTeam.Name}</td>
-           
+            <td><input type="checkbox" class="winnerCheckbox"></td>
+        `;
+        gameTableBody.appendChild(row);
+    });
+
+    document.getElementById('gameTable').classList.remove('hidden');
+}
+
+// Handle submission
+document.getElementById('submitBtn').addEventListener('click', submitPredictions);
+
+function submitPredictions() {
+    const checkboxes = document.querySelectorAll('.winnerCheckbox');
+    const predictions = Array.from(checkboxes).map(cb => cb.checked);
+
+    const predictionsRef = db.ref(`predictions/${currentUser.uid}`);
+    predictionsRef.set(predictions).then(() => {
+        alert("Predictions submitted successfully");
+    }).catch(error => {
+        console.error("Error submitting predictions:", error);
+    });
+}
