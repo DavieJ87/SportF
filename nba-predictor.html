@@ -6,8 +6,10 @@
     <title>NBA Game Predictor</title>
     <!-- Link to External CSS -->
     <link rel="stylesheet" href="styles/styles.css">
-    <!-- Firebase SDKs (Modular) -->
-    <script type="module" src="scripts/predictor.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
 </head>
 <body>
     <header>
@@ -16,11 +18,11 @@
     </header>
     
     <main>
-        <!-- Date Selection Menu with Left/Right Scroll Buttons -->
+        <!-- Date Selection Menu -->
         <div class="date-scroller-container">
-            <button id="leftArrow" class="scroll-btn">&lt;</button>
+            <button id="scrollLeft" class="scroll-arrow">◀</button>
             <div id="dateMenuContainer" class="date-scroller"></div>
-            <button id="rightArrow" class="scroll-btn">&gt;</button>
+            <button id="scrollRight" class="scroll-arrow">▶</button>
         </div>
 
         <!-- Game Table -->
@@ -42,5 +44,8 @@
         <!-- Submit button -->
         <button id="submitBtn">Submit</button>
     </main>
+
+    <!-- Include the predictor.js file -->
+    <script type="module" src="scripts/predictor.js"></script>
 </body>
 </html>
