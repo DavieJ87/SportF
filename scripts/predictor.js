@@ -65,15 +65,53 @@ function displayDateMenu(schedule) {
 
     const uniqueDates = [...new Set(schedule.map(game => game.DateTime.split('T')[0]))]; // Extract unique dates
 
+    // Create buttons for scrolling through dates
+    const leftArrow = document.createElement('button');
+    leftArrow.textContent = '<';
+    leftArrow.addEventListener('click', () => scrollDates(-1));
+
+    const rightArrow = document.createElement('button');
+    rightArrow.textContent = '>';
+    rightArrow.addEventListener('click', () => scrollDates(1));
+
+    dateMenuContainer.appendChild(leftArrow);
+
+    const datesWrapper = document.createElement('div');
+    datesWrapper.classList.add('dates-wrapper');
     uniqueDates.forEach(date => {
         const dateButton = document.createElement('button');
         dateButton.textContent = date;
+        dateButton.classList.add('date-button');
         dateButton.addEventListener('click', () => {
             const gamesForDate = schedule.filter(game => game.DateTime.startsWith(date));
             displayGamesByDate(gamesForDate);
         });
-        dateMenuContainer.appendChild(dateButton);
+        datesWrapper.appendChild(dateButton);
     });
+
+    dateMenuContainer.appendChild(datesWrapper);
+    dateMenuContainer.appendChild(rightArrow);
+
+    // Scroll logic for dates
+    let currentIndex = 0;
+    const visibleDatesCount = 3;
+
+    function scrollDates(direction) {
+        currentIndex += direction;
+        if (currentIndex < 0) currentIndex = 0;
+        if (currentIndex + visibleDatesCount > uniqueDates.length) currentIndex = uniqueDates.length - visibleDatesCount;
+        updateDateVisibility();
+    }
+
+    function updateDateVisibility() {
+        const allDateButtons = datesWrapper.querySelectorAll('.date-button');
+        allDateButtons.forEach((button, index) => {
+            button.style.display = (index >= currentIndex && index < currentIndex + visibleDatesCount) ? 'inline-block' : 'none';
+        });
+    }
+
+    // Initialize date visibility
+    updateDateVisibility();
 }
 
 // Display games for the selected date
