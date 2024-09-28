@@ -127,8 +127,8 @@ function displayGamesByDate(games) {
         const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url.png';
         const awayTeamLogo = awayTeam ? awayTeam.WikipediaLogoUrl : 'default_logo_url.png';
 
-        const homeTeamName = homeTeam ? homeTeam.TeamName : 'Unknown Team';
-        const awayTeamName = awayTeam ? awayTeam.TeamName : 'Unknown Team';
+        const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
+        const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
 
         console.log('Game data:', game);
         console.log('Home Team:', homeTeam);
