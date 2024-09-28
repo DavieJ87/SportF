@@ -1,129 +1,125 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithRedirect, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js';
-import { getDatabase, ref, get } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js';
+import { getDatabase, ref, get, set, child } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-database.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.1.3/firebase-auth.js";
 
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
-    authDomain: "sportf-8c772.firebaseapp.com",
-    databaseURL: "https://sportf-8c772-default-rtdb.firebaseio.com",
-    projectId: "sportf-8c772",
-    storageBucket: "sportf-8c772.appspot.com",
-    messagingSenderId: "523775447476",
-    appId: "1:523775447476:web:0f7a1a95fdc8fe7e02a2e1"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth();
 const db = getDatabase();
+const auth = getAuth();
 
-// DOM Elements
-const dateMenuContainer = document.getElementById('dateMenuContainer');
-const gameTableBody = document.getElementById('gameTableBody');
-const gameTable = document.getElementById('gameTable');
-const submitBtn = document.getElementById('submitBtn');
-const scrollLeft = document.getElementById('scrollLeft');
-const scrollRight = document.getElementById('scrollRight');
+let currentUser = null;
+let teams = {};
+let schedule = {};
 
-// Google Sign-In provider
-const provider = new GoogleAuthProvider();
+// Wait for authentication
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        loadTeams();
+    } else {
+        console.log("User is not authenticated, redirecting to login.");
+        window.location.href = 'login.html';
+    }
+});
 
-// Function to handle sign-in
-function handleSignIn() {
-    signInWithRedirect(auth, provider);
-}
-
-// Fetch data from Firebase and populate the date menu and game table
-function loadNBAData(user) {
-    const seasonRef = ref(db, 'nba/season_2024');
-    get(seasonRef).then((snapshot) => {
+// Load teams
+function loadTeams() {
+    const teamsRef = ref(db, 'nba/teams');
+    get(teamsRef).then(snapshot => {
         if (snapshot.exists()) {
-            const games = snapshot.val();
-            displayDateMenu(games);
+            teams = snapshot.val();
+            loadSchedule();
         } else {
-            console.error('No data available');
+            console.error("No teams data found");
         }
-    }).catch((error) => {
-        console.error('Error loading data:', error);
-    });
+    }).catch(error => console.error("Error loading teams:", error));
 }
 
-// Display date menu with horizontal scrolling
-function displayDateMenu(games) {
-    const uniqueDates = [...new Set(Object.values(games).map(game => game.DateTime.split('T')[0]))];
+// Load schedule and display date scroller
+function loadSchedule() {
+    const scheduleRef = ref(db, 'nba/season_2024');
+    get(scheduleRef).then(snapshot => {
+        if (snapshot.exists()) {
+            schedule = snapshot.val();
+            displayDateMenu();
+        } else {
+            console.error("No schedule data found");
+        }
+    }).catch(error => console.error("Error loading schedule:", error));
+}
 
-    uniqueDates.forEach(date => {
+// Display date menu
+function displayDateMenu() {
+    const dates = Object.keys(schedule).sort();
+    const dateScroller = document.getElementById('dateScroller');
+
+    dates.forEach(date => {
         const dateButton = document.createElement('button');
         dateButton.textContent = date;
-        dateButton.addEventListener('click', () => {
-            displayGamesByDate(date, games);
-        });
-        dateMenuContainer.appendChild(dateButton);
+        dateButton.addEventListener('click', () => displayGamesByDate(date));
+        dateScroller.appendChild(dateButton);
     });
 
-    // Initial scroll logic
-    scrollLeft.addEventListener('click', () => {
-        dateMenuContainer.scrollLeft -= 150;
-    });
+    document.getElementById("leftArrow").addEventListener('click', scrollDatesLeft);
+    document.getElementById("rightArrow").addEventListener('click', scrollDatesRight);
 
-    scrollRight.addEventListener('click', () => {
-        dateMenuContainer.scrollLeft += 150;
-    });
+    // Show only 3 dates at a time
+    scrollDates(0);
 }
 
-// Display games by selected date
-function displayGamesByDate(selectedDate, games) {
+// Scroll dates (helper)
+let currentIndex = 0;
+function scrollDates(index) {
+    const dates = document.querySelectorAll('#dateScroller button');
+    dates.forEach((btn, i) => {
+        btn.style.display = (i >= index && i < index + 3) ? 'inline-block' : 'none';
+    });
+    currentIndex = index;
+}
+
+function scrollDatesLeft() {
+    if (currentIndex > 0) {
+        scrollDates(currentIndex - 1);
+    }
+}
+
+function scrollDatesRight() {
+    const dates = document.querySelectorAll('#dateScroller button');
+    if (currentIndex + 3 < dates.length) {
+        scrollDates(currentIndex + 1);
+    }
+}
+
+// Display games by date
+function displayGamesByDate(date) {
+    const gameTableBody = document.getElementById('gameTableBody');
     gameTableBody.innerHTML = ''; // Clear previous games
 
-    const filteredGames = Object.values(games).filter(game => game.DateTime.startsWith(selectedDate));
+    const games = schedule[date];
+    games.forEach(game => {
+        const awayTeam = teams[game.AwayTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
+        const homeTeam = teams[game.HomeTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
 
-    filteredGames.forEach(game => {
         const row = document.createElement('tr');
-
-        // Away team
-        const awayTeamCell = document.createElement('td');
-        awayTeamCell.textContent = getTeamName(game.AwayTeamID);
-        row.appendChild(awayTeamCell);
-
-        // Home team
-        const homeTeamCell = document.createElement('td');
-        homeTeamCell.textContent = getTeamName(game.HomeTeamID);
-        row.appendChild(homeTeamCell);
-
-        // Winner selection
-        const winnerCell = document.createElement('td');
-        const winnerCheckbox = document.createElement('input');
-        winnerCheckbox.type = 'checkbox';
-        winnerCheckbox.dataset.gameId = game.GameID;
-        winnerCell.appendChild(winnerCheckbox);
-        row.appendChild(winnerCell);
-
+        row.innerHTML = `
+            <td><img src="${awayTeam.WikipediaLogoUrl}" alt="Away Team Logo">${awayTeam.Name}</td>
+            <td><img src="${homeTeam.WikipediaLogoUrl}" alt="Home Team Logo">${homeTeam.Name}</td>
+            <td><input type="checkbox" class="winnerCheckbox"></td>
+        `;
         gameTableBody.appendChild(row);
     });
 
-    gameTable.classList.remove('hidden'); // Show table after selection
+    document.getElementById('gameTable').classList.remove('hidden');
 }
 
-// Fetch team names (this should be optimized, here for example)
-function getTeamName(teamID) {
-    // Assuming teams data is stored somewhere in your database or a static object
-    // Example lookup:
-    const teams = {
-        1: 'Los Angeles Lakers',
-        2: 'Golden State Warriors',
-        // Add all teams here...
-    };
-    return teams[teamID] || 'Unknown Team';
-}
+// Handle submission
+document.getElementById('submitBtn').addEventListener('click', submitPredictions);
 
-// Check if user is authenticated
-onAuthStateChanged(auth, user => {
-    if (user) {
-        console.log("User is authenticated:", user);
-        loadNBAData(user);
-    } else {
-        console.error("User is not authenticated, redirecting to login.");
-        handleSignIn();
-    }
-});
+function submitPredictions() {
+    const checkboxes = document.querySelectorAll('.winnerCheckbox');
+    const predictions = Array.from(checkboxes).map(cb => cb.checked);
+
+    const predictionsRef = ref(db, `predictions/${currentUser.uid}`);
+    set(predictionsRef, predictions).then(() => {
+        alert("Predictions submitted successfully");
+    }).catch(error => {
+        console.error("Error submitting predictions:", error);
+    });
+}
