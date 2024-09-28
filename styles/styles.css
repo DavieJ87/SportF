@@ -1,114 +1,32 @@
-/* General Styles */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f4;
-}
-
-header {
-    background-color: #002244;
-    color: white;
-    padding: 20px;
-    text-align: center;
-}
-
-#user-info {
-    margin-top: 10px;
-    font-size: 14px;
-}
-
-main {
-    padding: 20px;
-}
-
-/* Date Scroller Styles */
 .date-scroller {
     display: flex;
-    overflow-x: auto;
-    padding: 10px 0;
-    border-bottom: 2px solid #ddd;
-    margin-bottom: 20px;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
-.date-item {
-    flex: 0 0 auto;
-    margin-right: 10px;
-    padding: 10px 20px;
-    background-color: #e0e0e0;
-    border-radius: 20px;
+.date-list {
+    display: flex;
+    overflow-x: hidden;
+    width: 300px;
+}
+
+.arrow {
+    background-color: #f0f0f0;
+    border: none;
     cursor: pointer;
-    transition: background-color 0.3s;
-    white-space: nowrap;
+    font-size: 20px;
 }
 
-.date-item:hover,
-.date-item.selected {
-    background-color: #002244;
-    color: white;
-}
-
-/* Game Table Styles */
-.game-table {
-    width: 100%;
-    overflow-x: auto;
-}
-
-.game-table table {
-    width: 100%;
-    border-collapse: collapse;
-    background-color: white;
-}
-
-.game-table th, .game-table td {
-    border: 1px solid #ddd;
-    padding: 12px;
-    text-align: center;
-}
-
-.game-table th {
-    background-color: #002244;
-    color: white;
-}
-
-.hidden {
-    display: none;
-}
-
-/* Submit Button Styles */
-.submit-button {
-    margin-top: 20px;
-    padding: 15px 30px;
-    font-size: 16px;
-    background-color: #002244;
+button {
+    background-color: #007bff;
     color: white;
     border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.submit-button:hover {
-    background-color: #004080;
-}
-
-.date-scroller {
-    overflow-x: auto; /* Allow horizontal scrolling */
-    white-space: nowrap; /* Keep dates on one line */
-}
-
-.date-scroller button {
-    display: inline-block;
-    margin: 5px;
     padding: 10px;
-    font-size: 14px;
+    cursor: pointer;
 }
 
-.date-scroller::-webkit-scrollbar {
-    display: none; /* Hide scrollbar for Webkit browsers */
+button:disabled {
+    background-color: grey;
+    cursor: not-allowed;
 }
-
-.date-scroller {
-    scrollbar-width: none; /* Hide scrollbar for Firefox */
-}
-
