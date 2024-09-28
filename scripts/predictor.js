@@ -104,14 +104,22 @@ function displayGamesByDate(date) {
     gameTableBody.innerHTML = ''; // Clear previous games
 
     const games = schedule[date];
-    games.forEach(game => {
+    
+    if (!games) {
+        console.error(`No games found for date ${date}`);
+        return;
+    }
+    
+    const gamesArray = Object.values(games); // Ensure we are working with an array
+
+    gamesArray.forEach(game => {
         const awayTeam = teams[game.AwayTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
         const homeTeam = teams[game.HomeTeamID] || { Name: 'Unknown Team', WikipediaLogoUrl: 'unknown_logo.png' };
 
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><img src="${awayTeam.WikipediaLogoUrl}" alt="Away Team Logo">${awayTeam.Name}</td>
-            <td><img src="${homeTeam.WikipediaLogoUrl}" alt="Home Team Logo">${homeTeam.Name}</td>
+            <td><img src="${awayTeam.WikipediaLogoUrl}" alt="Away Team Logo" width="50">${awayTeam.Name}</td>
+            <td><img src="${homeTeam.WikipediaLogoUrl}" alt="Home Team Logo" width="50">${homeTeam.Name}</td>
             <td><input type="checkbox" class="winnerCheckbox"></td>
         `;
         gameTableBody.appendChild(row);
