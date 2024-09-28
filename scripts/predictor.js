@@ -120,12 +120,15 @@ function displayGamesByDate(games) {
     gameTableBody.innerHTML = ''; // Clear previous rows
 
     games.forEach((game) => {
-        // Convert HomeTeamID and AwayTeamID into teamID to fetch team data
-        const homeTeamID = game.HomeTeamID; // Already matches teamID
-        const awayTeamID = game.AwayTeamID; // Already matches teamID
+        const homeTeamID = game.HomeTeamID;
+        const awayTeamID = game.AwayTeamID;
 
-        const homeTeam = teamsData[homeTeamID]; // Get home team data using teamID
-        const awayTeam = teamsData[awayTeamID]; // Get away team data using teamID
+        // Find the correct teams in teamsData by their teamID
+        const homeTeam = Object.values(teamsData).find(team => team.TeamID === homeTeamID);
+        const awayTeam = Object.values(teamsData).find(team => team.TeamID === awayTeamID);
+
+        console.log('Home Team ID:', homeTeamID, 'Home Team:', homeTeam);
+        console.log('Away Team ID:', awayTeamID, 'Away Team:', awayTeam);
 
         // Handle cases where team data is missing
         const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url.png';
@@ -133,10 +136,6 @@ function displayGamesByDate(games) {
 
         const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
         const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
-
-        console.log('Game data:', game);
-        console.log('Home Team:', homeTeam);
-        console.log('Away Team:', awayTeam);
 
         // Create a new row in the table for each game
         const row = document.createElement('tr');
