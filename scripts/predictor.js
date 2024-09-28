@@ -128,8 +128,8 @@ function displayGamesByDate(games) {
     gameTableBody.innerHTML = ''; // Clear previous rows
 
     games.forEach((game) => {
-        const homeTeam = teamsData[game.HomeTeamID];
-        const awayTeam = teamsData[game.AwayTeamID];
+        const homeTeam = teamsData[game.TeamID];
+        const awayTeam = teamsData[game.TeamID];
 
         // Handle cases where team data is missing
         const homeTeamLogo = homeTeam ? homeTeam.WikipediaLogoUrl : 'default_logo_url.png';
