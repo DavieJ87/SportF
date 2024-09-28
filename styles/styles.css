@@ -32,37 +32,56 @@ main {
     margin-bottom: 20px;
 }
 
-.date-list {
+#dateMenuContainer {
     display: flex;
-    overflow: hidden;
-    width: 200px; /* Adjust width for date visibility */
+    align-items: center;
     justify-content: center;
+    margin-bottom: 20px;
 }
 
-.date-list button {
+.arrow {
+    font-size: 30px; /* Increase size to match date buttons */
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0 15px; /* Adjust padding for better alignment */
+}
+
+.arrow:focus {
+    outline: none;
+}
+
+.dates-wrapper {
+    display: flex;
+    overflow: hidden;
+    width: 400px; /* Adjust based on how wide you want the date menu */
+    justify-content: center;
+    align-items: center;
+}
+
+.date-list {
+    display: flex;
+    justify-content: center;
+    transition: all 0.3s ease; /* Smooth scroll */
+}
+
+.date-button {
     padding: 10px 15px;
-    margin: 0 5px;
+    margin: 0 10px;
     background-color: #007bff;
     color: white;
     border: none;
     cursor: pointer;
     border-radius: 5px;
+    white-space: nowrap;
 }
 
-.date-list button:hover {
+.date-button:hover {
     background-color: #0056b3;
 }
 
-.arrow {
-    font-size: 20px;
-    background-color: transparent;
-    border: none;
+button {
     cursor: pointer;
-    padding: 0 10px;
-}
-
-.arrow:focus {
-    outline: none;
 }
 
 .game-table {
@@ -109,27 +128,3 @@ button#submitBtn:hover {
     background-color: #218838;
 }
 
-
-#dateMenuContainer {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dates-wrapper {
-    display: flex;
-    overflow: hidden;
-    width: 300px; /* Adjust based on how wide you want the date menu */
-    justify-content: space-between;
-}
-
-.date-button {
-    padding: 10px;
-    margin: 0 5px;
-    white-space: nowrap;
-    display: none;
-}
-
-button {
-    cursor: pointer;
-}
