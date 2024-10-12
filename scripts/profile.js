@@ -11,20 +11,16 @@ const firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
 const db = firebase.database();
+const auth = firebase.auth();
 
 let currentUser = null;
-let teamsData = {};
-let scheduleData = {};
 
 // Wait for authentication
 auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
         document.getElementById("user-info").innerText = `Hello, ${user.displayName}`;
-        loadTeamsData();
-        loadScheduleData(); // Load all schedule data once for reference
         loadUserPredictions();
     } else {
         console.log("User is not authenticated, redirecting to login.");
@@ -32,113 +28,54 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// Load NBA teams data
-function loadTeamsData() {
-    const teamsRef = db.ref('nba/teams');
-    teamsRef.once('value').then(snapshot => {
-        if (snapshot.exists()) {
-            teamsData = snapshot.val();
-            console.log("Teams data loaded:", teamsData);
-        } else {
-            console.error("No teams data found");
-        }
-    }).catch(error => console.error("Error loading teams:", error));
-}
-
-// Load NBA schedule data
-function loadScheduleData() {
-    const scheduleRef = db.ref('nba/season_2024');
-    scheduleRef.once('value').then(snapshot => {
-        if (snapshot.exists()) {
-            scheduleData = snapshot.val();
-            console.log("Schedule data loaded:", scheduleData);  // Log all schedule data
-        } else {
-            console.error("No schedule data found");
-        }
-    }).catch(error => console.error("Error loading schedule:", error));
-}
-
-// Load user predictions and calculate total points
+// Load user's predictions
 function loadUserPredictions() {
     const predictionsRef = db.ref(`nba/predictions/${currentUser.uid}`);
     predictionsRef.once('value').then(snapshot => {
-        if (snapshot.exists()) {
-            const predictions = snapshot.val();
-            console.log("User predictions loaded:", predictions);
+        const predictions = snapshot.val();
+        if (predictions) {
             displayUserPredictions(predictions);
         } else {
-            console.error("No predictions found for this user");
+            console.log("No predictions found.");
         }
-    }).catch(error => console.error("Error loading predictions:", error));
+    }).catch(error => {
+        console.error("Error loading predictions:", error);
+    });
 }
 
-// Display the last 5 predictions and calculate total points
+// Display user's predictions and calculate points
 function displayUserPredictions(predictions) {
-    const predictionsArray = Object.entries(predictions).slice(-5); // Get the last 5 predictions
-    const predictionsTableBody = document.getElementById('predictionsTableBody');
-    predictionsTableBody.innerHTML = ''; // Clear previous predictions
-
+    const predictionList = document.getElementById('predictionList');
     let totalPoints = 0;
 
-    predictionsArray.forEach(([gameID, predictedWinner]) => {
-        console.log(`Looking up gameID: ${gameID}, predictedWinner: ${predictedWinner}`);
+    Object.keys(predictions).forEach(gameID => {
+        const gameRef = db.ref(`nba/season_2024/${gameID}`);
+        gameRef.once('value').then(snapshot => {
+            const game = snapshot.val();
+            if (game) {
+                const homeWin = game.HomeTeamScore > game.AwayTeamScore;
+                const predictedWinner = predictions[gameID];
 
-        if (scheduleData[gameID]) {
-            const gameData = scheduleData[gameID];
-            console.log(`Game data for gameID ${gameID}:`, gameData);
+                let correct = false;
+                if ((homeWin && predictedWinner === 'home') || (!homeWin && predictedWinner === 'away')) {
+                    correct = true;
+                    totalPoints += 1;
+                }
 
-            const homeTeam = teamsData[gameData.HomeTeamID];
-            const awayTeam = teamsData[gameData.AwayTeamID];
-
-            const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
-            const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
-
-            const homeScore = gameData.homeTeamScore;
-            const awayScore = gameData.awayTeamScore;
-
-            // Determine the actual winner
-            let actualWinner = '';
-            if (homeScore > awayScore) {
-                actualWinner = 'home';
-            } else if (awayScore > homeScore) {
-                actualWinner = 'away';
+                const gameRow = document.createElement('div');
+                gameRow.innerHTML = `
+                    <p>Game: ${game.HomeTeam} vs ${game.AwayTeam}</p>
+                    <p>Your prediction: ${predictedWinner}</p>
+                    <p>Correct: ${correct ? 'Yes' : 'No'}</p>
+                `;
+                predictionList.appendChild(gameRow);
+            } else {
+                console.error(`Game with ID ${gameID} not found.`);
             }
-
-            // Check if the user's prediction is correct
-            const isCorrect = actualWinner === predictedWinner;
-            if (isCorrect) {
-                totalPoints += 1;
-            }
-
-            // Display the prediction in the table
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${awayTeamName} vs ${homeTeamName}</td>
-                <td>${awayScore} - ${homeScore}</td>
-                <td>${predictedWinner === 'home' ? homeTeamName : awayTeamName}</td>
-                <td>${isCorrect ? 'Correct' : 'Incorrect'}</td>
-            `;
-            predictionsTableBody.appendChild(row);
-        } else {
-            console.warn(`Game with ID ${gameID} not found in the schedule data.`);
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td colspan="4">Game with ID ${gameID} not found in the schedule data</td>
-            `;
-            predictionsTableBody.appendChild(row);
-        }
+        }).catch(error => {
+            console.error(`Error loading game with ID ${gameID}:`, error);
+        });
     });
 
-    document.getElementById('totalPoints').innerText = `Total Points: ${totalPoints}`;
+    document.getElementById('totalPoints').innerText = `Total points: ${totalPoints}`;
 }
-
-// Allow user to edit personal info
-document.getElementById('editUserInfoBtn').addEventListener('click', () => {
-    const displayName = prompt("Enter your new display name:", currentUser.displayName);
-    if (displayName) {
-        currentUser.updateProfile({ displayName }).then(() => {
-            document.getElementById("user-info").innerText = `Hello, ${currentUser.displayName}`;
-            alert("Profile updated successfully!");
-        }).catch(error => console.error("Error updating profile:", error));
-    }
-});
