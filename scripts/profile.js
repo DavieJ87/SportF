@@ -15,113 +15,110 @@ const db = firebase.database();
 const auth = firebase.auth();
 
 let currentUser = null;
-let predictions = {};
+let teamsData = {};
 let totalPoints = 0;
 
 // Wait for authentication
-auth.onAuthStateChanged(user => {
+auth.onAuthStateChanged((user) => {
     if (user) {
         currentUser = user;
-        document.getElementById("user-info").innerText = `Hello, ${user.displayName}`;
-        loadUserPredictions();
+        loadUserProfile(user.uid);
+        loadTeamsData();
     } else {
-        console.log("User is not authenticated, redirecting to login.");
-        window.location.href = 'login.html';
+        window.location.href = 'login.html'; // Redirect if not authenticated
     }
 });
 
-// Load user predictions and calculate points
-function loadUserPredictions() {
-    const predictionsRef = db.ref(`nba/predictions/${currentUser.uid}`);
+// Load NBA teams data
+function loadTeamsData() {
+    const teamsRef = db.ref('nba/teams');
+    teamsRef.once('value').then(snapshot => {
+        if (snapshot.exists()) {
+            teamsData = snapshot.val();
+        } else {
+            console.error("No teams data found");
+        }
+    }).catch(error => console.error("Error loading teams:", error));
+}
+
+// Load user profile and display predictions and points
+function loadUserProfile(userId) {
+    const predictionsRef = db.ref(`nba/predictions/${userId}`);
     predictionsRef.once('value').then(snapshot => {
         if (snapshot.exists()) {
-            predictions = snapshot.val();
-            loadGameResults(); // Compare with game results
+            const predictions = snapshot.val();
+            displayPredictions(predictions);
+            calculateTotalPoints(predictions);
         } else {
-            console.error("No predictions found");
+            console.log("No predictions found for the user.");
         }
     }).catch(error => console.error("Error loading predictions:", error));
 }
 
-// Load game results and calculate points
-function loadGameResults() {
-    const scheduleRef = db.ref('nba/season_2024');
-    scheduleRef.once('value').then(snapshot => {
-        if (snapshot.exists()) {
-            const games = snapshot.val();
-            calculatePoints(games);
-        } else {
-            console.error("No game results found");
-        }
-    }).catch(error => console.error("Error loading game results:", error));
-}
-
-// Compare predictions with game results and calculate points
-function calculatePoints(games) {
-    totalPoints = 0;
-    const lastFivePredictions = [];
-
-    Object.keys(predictions).forEach(gameID => {
-        const prediction = predictions[gameID];
-        const game = games[gameID];
-
-        if (game) {
-            const actualWinner = game.homeTeamScore > game.awayTeamScore ? 'home' : 'away';
-            if (prediction === actualWinner) {
-                totalPoints += 1;
-            }
-
-            // Add to the last 5 predictions array
-            if (lastFivePredictions.length < 5) {
-                lastFivePredictions.push({
-                    gameID,
-                    homeTeam: game.HomeTeamID,
-                    awayTeam: game.AwayTeamID,
-                    prediction,
-                    actualWinner
-                });
-            }
-        }
-    });
-
-    displayLastFivePredictions(lastFivePredictions);
-    displayTotalPoints(totalPoints);
-}
-
 // Display the last 5 predictions
-function displayLastFivePredictions(lastFive) {
-    const predictionsTable = document.getElementById('predictionsTableBody');
-    predictionsTable.innerHTML = '';
+function displayPredictions(predictions) {
+    const predictionsContainer = document.getElementById('predictionsContainer');
+    predictionsContainer.innerHTML = '';
 
-    lastFive.forEach(pred => {
-        const row = document.createElement('tr');
-        const predictedWinner = pred.prediction === 'home' ? 'Home' : 'Away';
-        const actualWinner = pred.actualWinner === 'home' ? 'Home' : 'Away';
-        const isCorrect = pred.prediction === pred.actualWinner ? 'Correct' : 'Incorrect';
+    const lastFivePredictions = Object.entries(predictions).slice(-5);
+    lastFivePredictions.forEach(([gameID, predictedWinner]) => {
+        const gameRef = db.ref(`nba/season_2024/${gameID}`);
+        gameRef.once('value').then(snapshot => {
+            if (snapshot.exists()) {
+                const game = snapshot.val();
+                const homeTeam = teamsData[game.HomeTeamID];
+                const awayTeam = teamsData[game.AwayTeamID];
+                const homeScore = game.homeTeamScore;
+                const awayScore = game.awayTeamScore;
 
-        row.innerHTML = `
-            <td>${pred.homeTeam} vs ${pred.awayTeam}</td>
-            <td>${predictedWinner}</td>
-            <td>${actualWinner}</td>
-            <td>${isCorrect}</td>
-        `;
+                // Determine the actual winner
+                let actualWinner = 'unknown';
+                if (homeScore !== undefined && awayScore !== undefined) {
+                    actualWinner = homeScore > awayScore ? 'home' : 'away';
+                }
 
-        predictionsTable.appendChild(row);
+                // Prevent changes to predictions once the result is available
+                const isGameFinished = homeScore !== undefined && awayScore !== undefined;
+
+                // Create prediction display
+                const predictionDiv = document.createElement('div');
+                predictionDiv.innerHTML = `
+                    <div>
+                        <p><b>${awayTeam.Name}</b> vs <b>${homeTeam.Name}</b></p>
+                        <p>Your prediction: ${predictedWinner === 'home' ? homeTeam.Name : awayTeam.Name}</p>
+                        <p>Actual winner: ${actualWinner === 'home' ? homeTeam.Name : awayTeam.Name}</p>
+                        <p>Score: ${homeScore ?? '-'} - ${awayScore ?? '-'}</p>
+                    </div>
+                `;
+                
+                // Append to container
+                predictionsContainer.appendChild(predictionDiv);
+            }
+        }).catch(error => console.error("Error loading game data:", error));
     });
 }
 
-// Display the total points
-function displayTotalPoints(points) {
-    document.getElementById('totalPoints').innerText = `Total Points: ${points}`;
-}
+// Calculate total points for the user based on correct predictions
+function calculateTotalPoints(predictions) {
+    Object.entries(predictions).forEach(([gameID, predictedWinner]) => {
+        const gameRef = db.ref(`nba/season_2024/${gameID}`);
+        gameRef.once('value').then(snapshot => {
+            if (snapshot.exists()) {
+                const game = snapshot.val();
+                const homeScore = game.homeTeamScore;
+                const awayScore = game.awayTeamScore;
 
-// Disable editing after predictions are made
-function disablePredictionEditing() {
-    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.disabled = true; // Disable all checkboxes
+                // Check the actual winner and compare with the user's prediction
+                if (homeScore !== undefined && awayScore !== undefined) {
+                    const actualWinner = homeScore > awayScore ? 'home' : 'away';
+                    if (actualWinner === predictedWinner) {
+                        totalPoints += 1;
+                    }
+                }
+
+                // Update the total points display
+                document.getElementById('totalPoints').innerText = `Total Points: ${totalPoints}`;
+            }
+        }).catch(error => console.error("Error loading game data for points calculation:", error));
     });
 }
-
-// Disable prediction editing after submitting
-disablePredictionEditing();
