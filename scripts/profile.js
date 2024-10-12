@@ -16,6 +16,7 @@ const db = firebase.database();
 
 let currentUser = null;
 let teamsData = {};
+let scheduleData = {};
 
 // Wait for authentication
 auth.onAuthStateChanged((user) => {
@@ -23,6 +24,7 @@ auth.onAuthStateChanged((user) => {
         currentUser = user;
         document.getElementById("user-info").innerText = `Hello, ${user.displayName}`;
         loadTeamsData();
+        loadScheduleData(); // Load all schedule data once for reference
         loadUserPredictions();
     } else {
         console.log("User is not authenticated, redirecting to login.");
@@ -41,6 +43,19 @@ function loadTeamsData() {
             console.error("No teams data found");
         }
     }).catch(error => console.error("Error loading teams:", error));
+}
+
+// Load NBA schedule data
+function loadScheduleData() {
+    const scheduleRef = db.ref('nba/season_2024');
+    scheduleRef.once('value').then(snapshot => {
+        if (snapshot.exists()) {
+            scheduleData = snapshot.val();
+            console.log("Schedule data loaded:", scheduleData);  // Log all schedule data
+        } else {
+            console.error("No schedule data found");
+        }
+    }).catch(error => console.error("Error loading schedule:", error));
 }
 
 // Load user predictions and calculate total points
@@ -66,55 +81,52 @@ function displayUserPredictions(predictions) {
     let totalPoints = 0;
 
     predictionsArray.forEach(([gameID, predictedWinner]) => {
-        console.log(`Loading data for gameID: ${gameID}, predictedWinner: ${predictedWinner}`);
+        console.log(`Looking up gameID: ${gameID}, predictedWinner: ${predictedWinner}`);
 
-        const gameRef = db.ref(`nba/season_2024/${gameID}`);
-        gameRef.once('value').then(snapshot => {
-            if (snapshot.exists()) {
-                const gameData = snapshot.val();
-                console.log(`Game data for gameID ${gameID}:`, gameData);
+        if (scheduleData[gameID]) {
+            const gameData = scheduleData[gameID];
+            console.log(`Game data for gameID ${gameID}:`, gameData);
 
-                const homeTeam = teamsData[gameData.HomeTeamID];
-                const awayTeam = teamsData[gameData.AwayTeamID];
+            const homeTeam = teamsData[gameData.HomeTeamID];
+            const awayTeam = teamsData[gameData.AwayTeamID];
 
-                const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
-                const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
+            const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
+            const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
 
-                const homeScore = gameData.homeTeamScore;
-                const awayScore = gameData.awayTeamScore;
+            const homeScore = gameData.homeTeamScore;
+            const awayScore = gameData.awayTeamScore;
 
-                // Determine the actual winner
-                let actualWinner = '';
-                if (homeScore > awayScore) {
-                    actualWinner = 'home';
-                } else if (awayScore > homeScore) {
-                    actualWinner = 'away';
-                }
-
-                // Check if the user's prediction is correct
-                const isCorrect = actualWinner === predictedWinner;
-                if (isCorrect) {
-                    totalPoints += 1;
-                }
-
-                // Display the prediction in the table
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${awayTeamName} vs ${homeTeamName}</td>
-                    <td>${awayScore} - ${homeScore}</td>
-                    <td>${predictedWinner === 'home' ? homeTeamName : awayTeamName}</td>
-                    <td>${isCorrect ? 'Correct' : 'Incorrect'}</td>
-                `;
-                predictionsTableBody.appendChild(row);
-            } else {
-                console.warn(`Game with ID ${gameID} not found.`);
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td colspan="4">Game with ID ${gameID} not found in the database</td>
-                `;
-                predictionsTableBody.appendChild(row);
+            // Determine the actual winner
+            let actualWinner = '';
+            if (homeScore > awayScore) {
+                actualWinner = 'home';
+            } else if (awayScore > homeScore) {
+                actualWinner = 'away';
             }
-        }).catch(error => console.error(`Error loading game data for gameID ${gameID}:`, error));
+
+            // Check if the user's prediction is correct
+            const isCorrect = actualWinner === predictedWinner;
+            if (isCorrect) {
+                totalPoints += 1;
+            }
+
+            // Display the prediction in the table
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${awayTeamName} vs ${homeTeamName}</td>
+                <td>${awayScore} - ${homeScore}</td>
+                <td>${predictedWinner === 'home' ? homeTeamName : awayTeamName}</td>
+                <td>${isCorrect ? 'Correct' : 'Incorrect'}</td>
+            `;
+            predictionsTableBody.appendChild(row);
+        } else {
+            console.warn(`Game with ID ${gameID} not found in the schedule data.`);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td colspan="4">Game with ID ${gameID} not found in the schedule data</td>
+            `;
+            predictionsTableBody.appendChild(row);
+        }
     });
 
     document.getElementById('totalPoints').innerText = `Total Points: ${totalPoints}`;
