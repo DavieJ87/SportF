@@ -23,6 +23,7 @@ auth.onAuthStateChanged((user) => {
         currentUser = user;
         document.getElementById("user-info").innerText = `Hello, ${user.displayName}`;
         loadTeamsData();
+        loadUserPredictions();
     } else {
         console.log("User is not authenticated, redirecting to login.");
         window.location.href = 'login.html';
@@ -36,14 +37,13 @@ function loadTeamsData() {
         if (snapshot.exists()) {
             teamsData = snapshot.val();
             console.log("Teams data loaded:", teamsData);
-            loadUserPredictions();
         } else {
             console.error("No teams data found");
         }
     }).catch(error => console.error("Error loading teams:", error));
 }
 
-// Load the user's predictions
+// Load user predictions and calculate total points
 function loadUserPredictions() {
     const predictionsRef = db.ref(`nba/predictions/${currentUser.uid}`);
     predictionsRef.once('value').then(snapshot => {
@@ -52,12 +52,12 @@ function loadUserPredictions() {
             console.log("User predictions loaded:", predictions);
             displayUserPredictions(predictions);
         } else {
-            console.log("No predictions found for this user.");
+            console.error("No predictions found for this user");
         }
     }).catch(error => console.error("Error loading predictions:", error));
 }
 
-// Display last 5 predictions and calculate points
+// Display the last 5 predictions and calculate total points
 function displayUserPredictions(predictions) {
     const predictionsArray = Object.entries(predictions).slice(-5); // Get the last 5 predictions
     const predictionsTableBody = document.getElementById('predictionsTableBody');
@@ -107,7 +107,12 @@ function displayUserPredictions(predictions) {
                 `;
                 predictionsTableBody.appendChild(row);
             } else {
-                console.error(`Game with ID ${gameID} not found.`);
+                console.warn(`Game with ID ${gameID} not found.`);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="4">Game with ID ${gameID} not found in the database</td>
+                `;
+                predictionsTableBody.appendChild(row);
             }
         }).catch(error => console.error(`Error loading game data for gameID ${gameID}:`, error));
     });
@@ -115,10 +120,13 @@ function displayUserPredictions(predictions) {
     document.getElementById('totalPoints').innerText = `Total Points: ${totalPoints}`;
 }
 
-// Prevent modifying predictions after submission
-document.addEventListener('DOMContentLoaded', function () {
-    const predictionInputs = document.querySelectorAll('input[type="checkbox"]');
-    predictionInputs.forEach(input => {
-        input.disabled = true; // Disable all prediction inputs
-    });
+// Allow user to edit personal info
+document.getElementById('editUserInfoBtn').addEventListener('click', () => {
+    const displayName = prompt("Enter your new display name:", currentUser.displayName);
+    if (displayName) {
+        currentUser.updateProfile({ displayName }).then(() => {
+            document.getElementById("user-info").innerText = `Hello, ${currentUser.displayName}`;
+            alert("Profile updated successfully!");
+        }).catch(error => console.error("Error updating profile:", error));
+    }
 });
