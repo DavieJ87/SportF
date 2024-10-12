@@ -66,13 +66,19 @@ function displayUserPredictions(predictions) {
     let totalPoints = 0;
 
     predictionsArray.forEach(([gameID, predictedWinner]) => {
+        console.log(`Loading data for gameID: ${gameID}, predictedWinner: ${predictedWinner}`);
+
         const gameRef = db.ref(`nba/season_2024/${gameID}`);
         gameRef.once('value').then(snapshot => {
             if (snapshot.exists()) {
                 const gameData = snapshot.val();
+                console.log(`Game data for gameID ${gameID}:`, gameData);
+
                 const homeTeam = teamsData[gameData.HomeTeamID];
                 const awayTeam = teamsData[gameData.AwayTeamID];
                 
+                console.log(`Home team: ${homeTeam ? homeTeam.Name : 'Unknown'}, Away team: ${awayTeam ? awayTeam.Name : 'Unknown'}`);
+
                 const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Home Team';
                 const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Away Team';
 
@@ -85,6 +91,8 @@ function displayUserPredictions(predictions) {
                 } else {
                     actualWinner = 'draw'; // In case of a tie
                 }
+
+                console.log(`Actual winner for gameID ${gameID}: ${actualWinner}`);
 
                 // Check if the prediction was correct
                 const isCorrect = predictedWinner === actualWinner;
@@ -102,7 +110,7 @@ function displayUserPredictions(predictions) {
             } else {
                 console.error(`Game with ID ${gameID} not found.`);
             }
-        }).catch(error => console.error("Error loading game data:", error));
+        }).catch(error => console.error(`Error loading game data for gameID ${gameID}:`, error));
     });
 
     // Display total points after loading all games
