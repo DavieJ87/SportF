@@ -164,9 +164,12 @@ document.getElementById('submitBtn').addEventListener('click', () => {
         const gameID = checkbox.dataset.gameId;
         const pick = checkbox.dataset.pick;
         predictions[gameID] = pick;
+
+        // Add a log to check the gameID being submitted
+        console.log(`Submitting prediction for gameID: ${gameID}, predicted winner: ${pick}`);
     });
 
-    const predictionsRef = db.ref(`predictions/${currentUser.uid}`);
+    const predictionsRef = db.ref(`nba/predictions/${currentUser.uid}`);
     predictionsRef.set(predictions)
         .then(() => alert("Predictions submitted successfully"))
         .catch(error => console.error("Error submitting predictions:", error));
