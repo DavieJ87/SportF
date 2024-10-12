@@ -1,4 +1,4 @@
-// Firebase config (already initialized in your previous code)
+// Firebase config
 const firebaseConfig = {
     apiKey: "AIzaSyDaQnfeZFAFy8FNv1OiTisa50Vao9kT3OI",
     authDomain: "sportf-8c772.firebaseapp.com",
@@ -29,7 +29,7 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// Load NBA teams data (same logic as predictor.js)
+// Load NBA teams data
 function loadTeamsData() {
     const teamsRef = db.ref('nba/teams');
     teamsRef.once('value').then(snapshot => {
@@ -76,35 +76,34 @@ function displayUserPredictions(predictions) {
 
                 const homeTeam = teamsData[gameData.HomeTeamID];
                 const awayTeam = teamsData[gameData.AwayTeamID];
-                
-                console.log(`Home team: ${homeTeam ? homeTeam.Name : 'Unknown'}, Away team: ${awayTeam ? awayTeam.Name : 'Unknown'}`);
 
-                const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Home Team';
-                const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Away Team';
+                const homeTeamName = homeTeam ? homeTeam.Name : 'Unknown Team';
+                const awayTeamName = awayTeam ? awayTeam.Name : 'Unknown Team';
+
+                const homeScore = gameData.homeTeamScore;
+                const awayScore = gameData.awayTeamScore;
 
                 // Determine the actual winner
-                let actualWinner;
-                if (gameData.HomeTeamScore > gameData.AwayTeamScore) {
+                let actualWinner = '';
+                if (homeScore > awayScore) {
                     actualWinner = 'home';
-                } else if (gameData.AwayTeamScore > gameData.HomeTeamScore) {
+                } else if (awayScore > homeScore) {
                     actualWinner = 'away';
-                } else {
-                    actualWinner = 'draw'; // In case of a tie
                 }
 
-                console.log(`Actual winner for gameID ${gameID}: ${actualWinner}`);
+                // Check if the user's prediction is correct
+                const isCorrect = actualWinner === predictedWinner;
+                if (isCorrect) {
+                    totalPoints += 1;
+                }
 
-                // Check if the prediction was correct
-                const isCorrect = predictedWinner === actualWinner;
-                if (isCorrect) totalPoints++;
-
-                // Add the prediction to the table
+                // Display the prediction in the table
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${awayTeamName} vs ${homeTeamName}</td>
+                    <td>${awayScore} - ${homeScore}</td>
                     <td>${predictedWinner === 'home' ? homeTeamName : awayTeamName}</td>
-                    <td>${actualWinner === 'home' ? homeTeamName : awayTeamName}</td>
-                    <td>${isCorrect ? '✔️' : '❌'}</td>
+                    <td>${isCorrect ? 'Correct' : 'Incorrect'}</td>
                 `;
                 predictionsTableBody.appendChild(row);
             } else {
@@ -113,6 +112,13 @@ function displayUserPredictions(predictions) {
         }).catch(error => console.error(`Error loading game data for gameID ${gameID}:`, error));
     });
 
-    // Display total points after loading all games
     document.getElementById('totalPoints').innerText = `Total Points: ${totalPoints}`;
 }
+
+// Prevent modifying predictions after submission
+document.addEventListener('DOMContentLoaded', function () {
+    const predictionInputs = document.querySelectorAll('input[type="checkbox"]');
+    predictionInputs.forEach(input => {
+        input.disabled = true; // Disable all prediction inputs
+    });
+});
